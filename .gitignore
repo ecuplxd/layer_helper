@@ -1,0 +1,4 @@
+*.pdf
+.idea
+_test
+*.pyc
