@@ -6,8 +6,10 @@ import os
 import shutil
 from typing import List, Any
 
+import comtypes
 import fitz
 import pandas as pd
+from win32com.client import DispatchEx
 
 
 def parse_sfz(id_str: str):
@@ -157,13 +159,27 @@ def correct_pdf_orien(pdf_file: str):
 def rotate_pdf(pdf_file: str, angle):
   pass
 
-
+# https://zhuanlan.zhihu.com/p/384500542
+# https://stackoverflow.com/questions/6011115/doc-to-pdf-using-python
 def word_2_pdf(word_file: str, new_name=None):
-  pass
+  wdFormatPDF = 17
+  word = comtypes.client.CreateObject('Word.Application')
+  doc = word.Documents.Open(word_file)
+  new_name = new_name or file_2_type(word_file)
+  doc.SaveAs(new_name, FileFormat=wdFormatPDF)
+  doc.Close()
+  word.Quit()
 
-
+# https://zhuanlan.zhihu.com/p/564822327
 def excel_2_pdf(excel_file, new_name=None):
-  pass
+  xl_app = DispatchEx("Excel.Application")
+  xl_app.Visible = False
+  xl_app.DisplayAlerts = 0
+  books = xl_app.Workbooks.Open(excel_file, False)
+  new_name = new_name or file_2_type(excel_file)
+  books.ExportAsFixedFormat(0, new_name)
+  books.Close(False)
+  xl_app.Quit()
 
 
 def img_2_pdf(img_file: str, new_name=None):

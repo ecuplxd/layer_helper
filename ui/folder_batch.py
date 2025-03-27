@@ -113,7 +113,7 @@ class FolderBatchWidget(QWidget):
         checkbox.setChecked(ext[1])
         h_layout.addWidget(checkbox)
         # 坑
-        checkbox.stateChanged.connect(lambda x, cur = ext: self.update_ext(x, cur))
+        checkbox.stateChanged.connect(lambda x, cur=ext: self.update_ext(x, cur))
 
       h_layout.addStretch()
       self.file_type_layout.addLayout(h_layout)
@@ -172,13 +172,11 @@ class FolderBatchWidget(QWidget):
     #   self.file_table.setCellWidget(r, 2, done)
     #   self.file_table.selectRow(r)
 
-
   def update_file_table_status(self, r):
     done = QLabel('√')
     done.setStyleSheet("QLabel {color: green}")
     self.file_table.setCellWidget(r, 2, done)
     self.file_table.selectRow(r)
-
 
   # https://gist.github.com/sneakers-the-rat/22c3449e2c7043c594712bce89c27e8e
   def choose_folders(self):
