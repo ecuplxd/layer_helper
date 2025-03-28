@@ -1,6 +1,29 @@
-from typing import List, Any
+from typing import List, Any, Dict
 
-from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import Signal, QObject
+from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QVBoxLayout, QHBoxLayout, QLabel
+
+
+class Status(QLabel):
+  def __init__(self, done=False):
+    super().__init__()
+
+    self.setText('待执行')
+
+    if done:
+      self.done()
+
+  def done(self):
+    self.setText('√')
+    self.setStyleSheet("QLabel {color: green}")
+
+
+class Notify(QObject):
+  updated = Signal()
+  done = Signal(int)
+
+
+NOTIFY = Notify()
 
 
 def clear_layout(layout):
@@ -19,17 +42,30 @@ def text_field(label: str, hint='选填'):
     'label': label,
     'type': 'text',
     'default': None,
-    'hint': hint
+    'hint': hint,
+    'val': None,
   }
+
 
 def num_filed(label: str):
   return {
     'label': label,
     'type': 'num',
     'default': 1,
+    'val': 1,
   }
 
-def create_field(config):
+
+def collect_field_vals(items: List[Any]):
+  result = {}
+
+  for item in items:
+    result[item['label']] = item['val']
+
+  return result
+
+
+def create_field(config: Dict):
   label = QLabel(config['label'] + '：')
   val_type = config['type']
   default = config.get('default')
@@ -38,15 +74,23 @@ def create_field(config):
   if val_type == 'num':
     control = QSpinBox()
     control.setValue(default)
+    control.valueChanged.connect(lambda x: update_field(x, config))
   elif val_type == 'bool':
     control = QCheckBox()
   elif val_type == 'text':
     control = QLineEdit()
     control.setPlaceholderText(config['hint'])
+    control.textChanged.connect(lambda x: update_field(x, config))
 
   return label, control
 
-def render_fields(parent: QVBoxLayout, items: List[Any], add_del = False):
+
+def update_field(v, config):
+  config['val'] = v
+  NOTIFY.updated.emit()
+
+
+def render_fields(parent: QVBoxLayout, items: List[Any]):
   h = QHBoxLayout()
 
   for item in items:
@@ -54,4 +98,5 @@ def render_fields(parent: QVBoxLayout, items: List[Any], add_del = False):
     h.addWidget(label)
     h.addWidget(control)
 
+  h.addStretch()
   parent.addLayout(h)
