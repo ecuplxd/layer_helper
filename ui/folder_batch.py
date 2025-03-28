@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QTableWidget, \
   QCheckBox, QFileDialog, QListView, QTreeView, QFileSystemModel, QAbstractItemView, QLabel, QSplitter, QHeaderView
 
+from ui.helper import clear_layout
 from util import file_2_type, find_files, img_2_pdf, word_2_pdf, excel_2_pdf, correct_img_orien, correct_pdf_orien
 
 
@@ -49,7 +50,7 @@ class FolderBatchWidget(QWidget):
     header = QHBoxLayout()
 
     self.funcs_select.addItems(self.ops)
-    view_btn = QPushButton('浏览...')
+    view_btn = QPushButton('选择目录')
     header.addWidget(self.funcs_select)
     header.addStretch()
     header.addWidget(view_btn)
@@ -89,18 +90,8 @@ class FolderBatchWidget(QWidget):
     ok_btn.clicked.connect(self.exec_fun)
     self.funcs_select.setCurrentIndex(1)
 
-  def clear_layout(self, layout):
-    if layout is not None:
-      while layout.count():
-        item = layout.takeAt(0)
-        widget = item.widget()
-        if widget is not None:
-          widget.deleteLater()
-        else:
-          self.clear_layout(item.layout())
-
   def show_file_type(self, i: int = 0):
-    self.clear_layout(self.file_type_layout)
+    clear_layout(self.file_type_layout)
 
     for file_type in self.op_file_types[i]:
       h_layout = QHBoxLayout()
