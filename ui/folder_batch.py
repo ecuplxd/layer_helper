@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QTableWidget, \
   QCheckBox, QFileDialog, QListView, QTreeView, QFileSystemModel, QAbstractItemView, QLabel, QSplitter, QHeaderView
 
-from ui.helper import clear_layout
+from ui.helper import clear_layout, Status
 from util import file_2_type, find_files, img_2_pdf, word_2_pdf, excel_2_pdf, correct_img_orien, correct_pdf_orien
 
 
@@ -38,6 +38,7 @@ class FolderBatchWidget(QWidget):
   def __init__(self):
     super().__init__()
 
+    self.thread = None
     self.file_type_layout = QVBoxLayout()
     self.folder_table = QTableWidget()
     self.file_table = QTableWidget()
@@ -164,9 +165,7 @@ class FolderBatchWidget(QWidget):
     #   self.file_table.selectRow(r)
 
   def update_file_table_status(self, r):
-    done = QLabel('√')
-    done.setStyleSheet("QLabel {color: green}")
-    self.file_table.setCellWidget(r, 2, done)
+    self.file_table.setCellWidget(r, 2, Status(True))
     self.file_table.selectRow(r)
 
   # https://gist.github.com/sneakers-the-rat/22c3449e2c7043c594712bce89c27e8e

@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import shutil
+import time
 from typing import List, Any
 
 import comtypes
@@ -14,6 +15,8 @@ import pandas as pd
 from pytesseract import pytesseract
 from scipy import ndimage
 from win32com.client import DispatchEx
+
+from ui.helper import Notify, NOTIFY
 
 
 def parse_sfz(id_str: str):
@@ -112,7 +115,7 @@ def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
     del_files(pdf_files)
 
 
-def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None):
+def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None, preview=False):
   """
   提取 pdf 文件指定页码范围为一个新的 pdf 文件
   :param pdf_file:
@@ -122,34 +125,56 @@ def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None
   :param new_name:
   :return:
   """
+  out = out or get_file_name(pdf_file)
+  new_name = new_name or f'part_{s + 1}_{e + 1}'
+  full = os.path.join(out, new_name + '.pdf')
+
+  if preview:
+    return full
+
   doc = fitz.open(pdf_file)
   new_doc = fitz.open()
   new_doc.insert_pdf(doc, from_page=s, to_page=e)
 
-  out = out or get_file_name(pdf_file)
-  new_name = new_name or f'part_{s + 1}_{e + 1}.pdf'
-  full = os.path.join(out, new_name)
   make_dir(out)
   new_doc.save(full)
   new_doc.close()
   doc.close()
 
 
-def split_pdf(pdf_file: str, step=1, s=0, out: str = None):
+def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None, preview=False):
   """
   规则分割 pdf 文件
   :param pdf_file:
   :param s:
+  :param e:
   :param step:
   :param out:
+  :param new_name:
+  :param preview:
   :return:
   """
   doc = fitz.open(pdf_file)
-  page_num = doc.page_count
+  page_num = e or doc.page_count
+  doc.close()
+  outputs = []
+  idx = 0
 
   for i in range(s, page_num, step):
     end = min(i + step - 1, page_num - 1)
-    extract_pdf(pdf_file, i, end, out)
+
+    if new_name:
+      outputs.append(extract_pdf(pdf_file, i, end, out, f'{i}-{new_name}', preview))
+    else:
+      outputs.append(extract_pdf(pdf_file, i, end, out, new_name, preview))
+
+    if not preview:
+      NOTIFY.done.emit(idx)
+      time.sleep(0.03)
+
+    idx += 1
+
+  return outputs
 
 
 def ocr_pdf(pdf_file: str, page=0, dpi=350):
@@ -236,7 +261,8 @@ def correct_img_orien(img_file: str, new_name: str = None):
 
 
 def main():
-  correct_img_orien('./_test/2.jpg', './test.jpg')
+  # correct_img_orien('./_test/2.jpg', './test.jpg')
+  split_pdf('./_test/pdf/S30C-0i25032516150.pdf')
 
 
 if __name__ == '__main__':
