@@ -5,12 +5,14 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QTabWidget
 
 from ui.folder_batch import FolderBatchWidget
+from ui.pdf import PDFWidget
 
 
 class MainWindow(QMainWindow):
-  tabs = ['PDF', 'Word', 'Excel', '图片', '目录批处理', '新版诉状制作', '常规文书制作', '关于']
+  tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '新版诉状制作', '常规文书制作', '关于']
   tab_widgets = {
-    '目录批处理': FolderBatchWidget
+    'PDF': PDFWidget,
+    '批处理': FolderBatchWidget
   }
 
   def __init__(self):
@@ -40,8 +42,7 @@ class MainWindow(QMainWindow):
       tab.setObjectName(name)
       tab_widget.addTab(tab, name)
 
-      if self.tab_widgets.get(name):
-        tab_widget.setCurrentWidget(tab)
+    tab_widget.setCurrentIndex(0)
 
     return tab_widget
 

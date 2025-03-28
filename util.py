@@ -7,8 +7,12 @@ import shutil
 from typing import List, Any
 
 import comtypes
+import cv2
 import fitz
+import numpy as np
 import pandas as pd
+from pytesseract import pytesseract
+from scipy import ndimage
 from win32com.client import DispatchEx
 
 
@@ -93,7 +97,7 @@ def json_file_2_json(json_file: str):
 
 
 # pdf 工具类
-def merge_pdf(pdf_files: List[str], new_name: str, del_raw=False):
+def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
   new_doc = fitz.open()
 
   for file in pdf_files:
@@ -148,8 +152,15 @@ def split_pdf(pdf_file: str, step=1, s=0, out: str = None):
     extract_pdf(pdf_file, i, end, out)
 
 
-def ocr_pdf(pdf_file, page=0):
-  pass
+def ocr_pdf(pdf_file: str, page=0, dpi=350):
+  doc = fitz.open(pdf_file)
+  page = doc.load_page(page)
+  pix = page.get_pixmap(dpi)
+  img = np.frombuffer(pix.samples_mv, dtype=np.uint8).reshape((pix.height, pix.width, 3)).copy()
+  result = pytesseract.image_to_string(img, lang='chi_sim')
+  result = result.replace(' ', '')
+
+  return result
 
 
 def correct_pdf_orien(pdf_file: str):
@@ -159,9 +170,10 @@ def correct_pdf_orien(pdf_file: str):
 def rotate_pdf(pdf_file: str, angle):
   pass
 
+
 # https://zhuanlan.zhihu.com/p/384500542
 # https://stackoverflow.com/questions/6011115/doc-to-pdf-using-python
-def word_2_pdf(word_file: str, new_name=None):
+def word_2_pdf(word_file: str, new_name: str = None):
   wdFormatPDF = 17
   word = comtypes.client.CreateObject('Word.Application')
   doc = word.Documents.Open(word_file)
@@ -170,8 +182,9 @@ def word_2_pdf(word_file: str, new_name=None):
   doc.Close()
   word.Quit()
 
+
 # https://zhuanlan.zhihu.com/p/564822327
-def excel_2_pdf(excel_file, new_name=None):
+def excel_2_pdf(excel_file, new_name: str = None):
   xl_app = DispatchEx("Excel.Application")
   xl_app.Visible = False
   xl_app.DisplayAlerts = 0
@@ -182,7 +195,7 @@ def excel_2_pdf(excel_file, new_name=None):
   xl_app.Quit()
 
 
-def img_2_pdf(img_file: str, new_name=None):
+def img_2_pdf(img_file: str, new_name: str = None):
   doc = fitz.open()
   img_doc = fitz.open(img_file)
   pdf_bytes = img_doc.convert_to_pdf()
@@ -206,12 +219,24 @@ def rotate_img(img_file: str):
   pass
 
 
-def correct_img_orien(img_file: str, angle=0.0):
-  pass
+def float_convertor(x):
+  if x.isdigit():
+    out = float(x)
+  else:
+    out = x
+  return out
+
+
+def correct_img_orien(img_file: str, new_name: str = None):
+  img = cv2.imread(img_file)
+  k = pytesseract.image_to_osd(img)
+  out = {i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n")}
+  img_rotated = ndimage.rotate(img, 360 - out["Rotate"])
+  cv2.imwrite(new_name or img_file, img_rotated)
 
 
 def main():
-  split_pdf('./S30C-0i25032516150.pdf', 2)
+  correct_img_orien('./_test/2.jpg', './test.jpg')
 
 
 if __name__ == '__main__':
