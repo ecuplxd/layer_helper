@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
 from ui.drag import DragDropWidget
 from ui.helper import clear_layout, text_field, num_filed, render_fields, collect_field_vals, NOTIFY, \
   clear_all_children
-from util import preview_split_pdf, list_at, get_pdf_page, split_pdf
+from util import preview_split_pdf, list_at, get_pdf_page, split_pdf, merged_name, merge_pdf
 
 
 def regular_config():
@@ -107,7 +107,7 @@ class PDFWidget(DragDropWidget):
 
   def update_config_ui(self):
     clear_layout(self.config_layout)
-    self.file_tree.clear()
+    self.clear_files()
     idx = self.funcs.currentIndex()
 
     if idx == 1:
@@ -132,6 +132,9 @@ class PDFWidget(DragDropWidget):
     fun_name = self.funcs.currentText()
 
     if fun_name == '规则分割':
+      self.file_tree.showColumn(1)
+      self.file_tree.showColumn(2)
+
       for r, file in enumerate(files):
         item = self.file_tree.topLevelItem(r)
         items = self.cur_config_items()
@@ -163,8 +166,21 @@ class PDFWidget(DragDropWidget):
             child.setText(2, '待执行')
 
         item.setExpanded(True)
-    else:
-      pass
+    elif fun_name == '合并':
+      self.file_tree.clear()
+      self.file_tree.hideColumn(1)
+      self.file_tree.hideColumn(2)
+
+      for file in self.files:
+        item = QTreeWidgetItem(self.file_tree)
+        item.setText(0, file)
+
+      val = collect_field_vals(self.cur_config_items())[0]
+
+      if val['新文件名']:
+        self.status.setText(val['新文件名'])
+      else:
+        self.status.setText(f'默认名为：merged-年月日时分秒')
 
   def mark_extract_done(self, i: int, j: int):
     self.cur += 1
@@ -200,7 +216,9 @@ class PDFWidget(DragDropWidget):
     elif fun_name == '不规则分割':
       pass
     elif fun_name == '合并':
-      pass
+      val = vals[0]
+      merge_pdf(self.files, val['新文件名'])
+      self.status.setText('已合并')
     else:
       pass
 
