@@ -9,7 +9,7 @@ from ui.pdf import PDFWidget
 
 
 class MainWindow(QMainWindow):
-  tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '新版诉状制作', '常规文书制作', '关于']
+  tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '文件挑选', '新版诉状', '常规文书', '关于']
   tab_widgets = {
     'PDF': PDFWidget,
     '批处理': FolderBatchWidget

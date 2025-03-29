@@ -1,29 +1,38 @@
-import time
 from typing import List
 
-from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QTableWidget, QLabel, QHeaderView
+from PySide6.QtCore import QThread
+from PySide6.QtWidgets import QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QHeaderView, \
+  QTreeWidget, QTreeWidgetItem, QLabel
 
 from ui.drag import DragDropWidget
-from ui.helper import clear_layout, text_field, num_filed, render_fields, collect_field_vals, NOTIFY, Status
-from util import split_pdf
+from ui.helper import clear_layout, text_field, num_filed, render_fields, collect_field_vals, NOTIFY, \
+  clear_all_children
+from util import preview_split_pdf, list_at, get_pdf_page, split_pdf
+
+
+def regular_config():
+  return [
+    num_filed('页数'),
+    text_field('新文件名'),
+  ]
+
+
+def unregular_config():
+  return [
+    text_field('范围', '1-3'),
+    text_field('新文件名'),
+  ]
 
 
 class PDFWidget(DragDropWidget):
   config_map = {
     '规则分割': {
-      'items': [
-        num_filed('页数'),
-        text_field('新文件名'),
-      ]
+      'items': [regular_config()]
     },
     '不规则分割': {
       'arr': True,
       'items': [
-        [
-          text_field('范围', '1-3'),
-          text_field('新文件名'),
-        ],
+        unregular_config()
       ],
     },
     '合并': {
@@ -33,14 +42,24 @@ class PDFWidget(DragDropWidget):
     },
   }
 
-  files: List[str] = ['./_test/pdf/S30C-0i25032516150.pdf']
+  files: List[str] = ['./_test/pdf/S30C-0i25031710240.pdf',
+                      './_test/pdf/S30C-0i25032516120.pdf',
+                      './_test/pdf/S30C-0i25032516150.pdf',
+                      './_test/pdf/S30C-0i25032609510.pdf',
+                      './_test/pdf/S30C-0i25032610080.pdf',
+                      './_test/pdf/S30C-0i25032717070.pdf',
+                      './_test/pdf/S30C-0i25032814300.pdf',
+                      './_test/pdf/S30C-0i25032814320.pdf', ]
+  cur = 0
+  total = 0
 
   def __init__(self):
     super().__init__()
     self.config_layout = QVBoxLayout()
     self.funcs = QComboBox()
     self.add_btn = QPushButton('增加')
-    self.table = QTableWidget()
+    self.file_tree = QTreeWidget()
+    self.status = QLabel()
     self.init_ui()
 
   def init_ui(self):
@@ -52,95 +71,131 @@ class PDFWidget(DragDropWidget):
     h.addWidget(self.add_btn)
     h.addStretch()
 
-    self.table.setColumnCount(3)
-    self.table.setHorizontalHeaderLabels(['原文件', '处理后', '状态'])
-    self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-    self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-    self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+    self.file_tree.setColumnCount(3)
+    self.file_tree.setHeaderLabels(['原文件', '配置', '状态'])
+    self.file_tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     h2 = QHBoxLayout()
     ok = QPushButton('执行')
+    clear = QPushButton('清空')
     h2.addStretch()
+    h2.addWidget(self.status)
+    h2.addWidget(clear)
     h2.addWidget(ok)
 
     layout.addLayout(h)
     layout.addLayout(self.config_layout)
-    layout.addWidget(self.table)
-    # layout.addStretch()
+    layout.addWidget(self.file_tree)
     layout.addLayout(h2)
 
-    self.funcs.currentIndexChanged.connect(self.ui_form)
+    self.funcs.currentIndexChanged.connect(self.update_config_ui)
     self.add_btn.clicked.connect(self.add_field)
     ok.clicked.connect(self.exe_fun)
+    clear.clicked.connect(self.clear_files)
     self.dropped.connect(self.update_table)
-    NOTIFY.updated.connect(self.update_table)
-    NOTIFY.done.connect(self.mark_done)
+    NOTIFY.field_updated.connect(self.update_table)
+    NOTIFY.extracted_pdf.connect(self.mark_extract_done)
 
-    self.ui_form()
+    self.update_config_ui()
     self.setLayout(layout)
+    self.update_table()
 
   def add_field(self):
-    config = self.config_map.get(self.funcs.currentText())
+    items = self.cur_config_items()
+    items.append(unregular_config())
+    self.config_layout.addWidget(render_fields(items[-1]))
 
-    if config.get('arr'):
-      render_fields(self.config_layout, config['items'][0])
+  def update_config_ui(self):
+    clear_layout(self.config_layout)
+    self.file_tree.clear()
+    idx = self.funcs.currentIndex()
 
-  def ui_form(self):
-    config = self.config_map.get(self.funcs.currentText())
-    is_arr = config.get('arr')
-    items = config['items']
-
-    if is_arr:
+    if idx == 1:
       self.add_btn.show()
+      items = self.cur_config_items()
+      for group in items:
+        self.config_layout.addWidget(render_fields(group))
     else:
       self.add_btn.hide()
 
-    clear_layout(self.config_layout)
-
-    if is_arr:
-      for group in items:
-        render_fields(self.config_layout, group)
-    else:
-      render_fields(self.config_layout, items)
+      if idx == 2:
+        self.config_layout.addWidget(render_fields(self.cur_config_items()))
 
   def update_table(self, files: List[str] = None):
-    self.table.setRowCount(0)
+    if files:
+      self.file_tree.clear()
+
+    self.total = 0
     self.files = files or self.files
 
     files = [file for file in self.files if '.pdf' in file]
     fun_name = self.funcs.currentText()
-    output_files = []
 
     if fun_name == '规则分割':
-      val = self.cur_config()
-      output_files = split_pdf(files[0], val['页数'], new_name=val['新文件名'], preview=True)
+      for r, file in enumerate(files):
+        item = self.file_tree.topLevelItem(r)
+        items = self.cur_config_items()
+        fields = list_at(items, r)
 
-    self.table.setRowCount(len(output_files))
-    self.table.setCellWidget(0, 0, QLabel(files[0]))
+        if not fields:
+          fields = regular_config()
+          items.append(fields)
 
-    for r, file in enumerate(output_files):
-      self.table.setCellWidget(r, 1, QLabel(file))
-      self.table.setCellWidget(r, 2, Status())
+        config = collect_field_vals(fields)[0]
 
-  def mark_done(self, r: int):
-    self.table.setCellWidget(r, 2, Status(True))
-    self.table.selectRow(r)
+        if not item:
+          item = QTreeWidgetItem(self.file_tree)
+          self.file_tree.setItemWidget(item, 1, render_fields(fields))
 
-  def cur_config(self):
+        # Perf：解决渲染过慢的问题
+        item.setExpanded(False)
+        page_num = get_pdf_page(file)
+        output_files = preview_split_pdf(file, config['页数'], e=page_num, new_name=config['新文件名'])
+        first_child = item.child(0)
+        item.setText(0, f'{file} - {page_num} 页 {len(output_files)} 份')
+        self.total += len(output_files)
+
+        if not first_child or first_child.text(0) != output_files[0]:
+          clear_all_children(item)
+          for out_file in output_files:
+            child = QTreeWidgetItem(item)
+            child.setText(0, out_file)
+            child.setText(2, '待执行')
+
+        item.setExpanded(True)
+    else:
+      pass
+
+  def mark_extract_done(self, i: int, j: int):
+    self.cur += 1
+    item = self.file_tree.topLevelItem(i)
+    child = item.child(j)
+    child.setText(2, '√')
+
+    if item.child(j + 1):
+      self.file_tree.scrollToItem(item.child(j + 1))
+    else:
+      self.file_tree.scrollToItem(child)
+
+    self.status.setText(f'{self.cur}/{self.total}')
+
+  def cur_config_items(self):
     config = self.config_map[self.funcs.currentText()]
-    vals = collect_field_vals(config['items'])
 
-    return vals
+    return config['items']
+
+  def clear_files(self):
+    self.files = []
+    self.file_tree.clear()
+    self.status.setText('')
 
   def exe_fun(self):
-    config = self.config_map[self.funcs.currentText()]
-    vals = collect_field_vals(config['items'])
+    items = self.cur_config_items()
+    vals = collect_field_vals(items)
     fun_name = self.funcs.currentText()
 
     if fun_name == '规则分割':
-      val = self.cur_config()
-      self.thread = Worker(self.files[0], val['页数'], val['新文件名'])
-      self.thread.updated.connect(self.mark_done)
+      self.thread = Worker(self.files, vals)
       self.thread.start()
     elif fun_name == '不规则分割':
       pass
@@ -149,19 +204,14 @@ class PDFWidget(DragDropWidget):
     else:
       pass
 
-    print(vals)
-
 
 class Worker(QThread):
-  updated = Signal(int)
-
-  def __init__(self, file: str, page: int, new_name: str):
+  def __init__(self, files: List[str], configs: List):
     super().__init__()
-    self.file = file
-    self.page = page
-    self.new_name = new_name
-    NOTIFY.done.connect(lambda r: self.updated.emit(r))
+    self.files = files
+    self.configs = configs
 
   def run(self):
-    split_pdf(self.file, self.page, new_name=self.new_name)
-
+    for r, file in enumerate(self.files):
+      config = self.configs[r]
+      split_pdf(file, config['页数'], new_name=config['新文件名'], r=r)

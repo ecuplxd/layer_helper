@@ -16,7 +16,7 @@ from pytesseract import pytesseract
 from scipy import ndimage
 from win32com.client import DispatchEx
 
-from ui.helper import Notify, NOTIFY
+from ui.helper import NOTIFY
 
 
 def parse_sfz(id_str: str):
@@ -115,7 +115,14 @@ def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
     del_files(pdf_files)
 
 
-def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None, preview=False):
+def _extract_pdf(doc, s, e):
+  new_doc = fitz.open()
+  new_doc.insert_pdf(doc, from_page=s, to_page=e)
+
+  return new_doc
+
+
+def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None):
   """
   提取 pdf 文件指定页码范围为一个新的 pdf 文件
   :param pdf_file:
@@ -125,24 +132,22 @@ def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None
   :param new_name:
   :return:
   """
+  doc = fitz.open(pdf_file)
+  new_doc = _extract_pdf(doc, s, e)
+
   out = out or get_file_name(pdf_file)
   new_name = new_name or f'part_{s + 1}_{e + 1}'
-  full = os.path.join(out, new_name + '.pdf')
-
-  if preview:
-    return full
-
-  doc = fitz.open(pdf_file)
-  new_doc = fitz.open()
-  new_doc.insert_pdf(doc, from_page=s, to_page=e)
-
-  make_dir(out)
-  new_doc.save(full)
-  new_doc.close()
+  save_pdf(new_doc, out, new_name)
   doc.close()
 
 
-def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None, preview=False):
+def save_pdf(doc, out, name):
+  make_dir(out)
+  doc.save(os.path.join(out, name + '.pdf'))
+  doc.close()
+
+
+def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None, r=0):
   """
   规则分割 pdf 文件
   :param pdf_file:
@@ -151,28 +156,40 @@ def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None
   :param step:
   :param out:
   :param new_name:
-  :param preview:
   :return:
   """
-  doc = fitz.open(pdf_file)
-  page_num = e or doc.page_count
-  doc.close()
-  outputs = []
+  page_num = e or get_pdf_page(pdf_file)
   idx = 0
 
   for i in range(s, page_num, step):
     end = min(i + step - 1, page_num - 1)
-
-    if new_name:
-      outputs.append(extract_pdf(pdf_file, i, end, out, f'{i}-{new_name}', preview))
-    else:
-      outputs.append(extract_pdf(pdf_file, i, end, out, new_name, preview))
-
-    if not preview:
-      NOTIFY.done.emit(idx)
-      time.sleep(0.03)
+    extract_pdf(pdf_file, i, end, out, new_name)
+    NOTIFY.extracted_pdf.emit(r, idx)
+    time.sleep(0.03)
 
     idx += 1
+
+
+def get_pdf_page(pdf_file: str):
+  doc = fitz.open(pdf_file)
+  count = doc.page_count
+  doc.close()
+  return count
+
+
+def preview_split_pdf(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
+  outputs = []
+  page_num = e or get_pdf_page(pdf_file)
+  out = out or get_file_name(pdf_file)
+
+  for i in range(s, page_num, step):
+    end = min(i + step - 1, page_num - 1)
+    if new_name:
+      full = os.path.join(out, f'{i}_{new_name}' + '.pdf')
+    else:
+      full = os.path.join(out, f'part_{i + 1}_{end + 1}' + '.pdf')
+
+    outputs.append(full)
 
   return outputs
 

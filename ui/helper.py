@@ -1,7 +1,7 @@
 from typing import List, Any, Dict
 
-from PySide6.QtCore import Signal, QObject
-from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import Signal, QObject, Qt
+from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QHBoxLayout, QLabel
 
 
 class Status(QLabel):
@@ -19,11 +19,16 @@ class Status(QLabel):
 
 
 class Notify(QObject):
-  updated = Signal()
-  done = Signal(int)
+  field_updated = Signal()
+  extracted_pdf = Signal(int, int)
 
 
 NOTIFY = Notify()
+
+
+def clear_all_children(node):
+  for i in reversed(range(node.childCount())):
+    node.removeChild(node.child(i))
 
 
 def clear_layout(layout):
@@ -57,28 +62,43 @@ def num_filed(label: str):
 
 
 def collect_field_vals(items: List[Any]):
-  result = {}
+  result = []
 
-  for item in items:
-    result[item['label']] = item['val']
+  if isinstance(items[0], list):
+    for row in items:
+      result.append(collect_field_val(row))
+  else:
+    result.append(collect_field_val(items))
 
   return result
 
 
+def collect_field_val(items):
+  val = {}
+  for item in items:
+    val[item['label']] = item['val']
+  return val
+
+
 def create_field(config: Dict):
   label = QLabel(config['label'] + '：')
+  val = config.get('val')
   val_type = config['type']
-  default = config.get('default')
   control = QWidget()
+
+  if val is None:
+    val = config.get('default')
 
   if val_type == 'num':
     control = QSpinBox()
-    control.setValue(default)
+    control.setValue(val)
     control.valueChanged.connect(lambda x: update_field(x, config))
   elif val_type == 'bool':
     control = QCheckBox()
+    control.setChecked(val)
   elif val_type == 'text':
     control = QLineEdit()
+    control.setText(val)
     control.setPlaceholderText(config['hint'])
     control.textChanged.connect(lambda x: update_field(x, config))
 
@@ -87,16 +107,19 @@ def create_field(config: Dict):
 
 def update_field(v, config):
   config['val'] = v
-  NOTIFY.updated.emit()
+  NOTIFY.field_updated.emit()
 
 
-def render_fields(parent: QVBoxLayout, items: List[Any]):
+def render_fields(items: List[Any]):
+  widget = QWidget()
   h = QHBoxLayout()
+  h.setAlignment(Qt.AlignLeft)
 
   for item in items:
     label, control = create_field(item)
     h.addWidget(label)
     h.addWidget(control)
 
-  h.addStretch()
-  parent.addLayout(h)
+  widget.setLayout(h)
+
+  return widget

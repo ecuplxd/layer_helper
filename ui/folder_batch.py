@@ -156,14 +156,6 @@ class FolderBatchWidget(QWidget):
     self.thread.updated.connect(self.update_file_table_status)
     self.thread.start()
 
-    # for (r, matched) in enumerate(self.matched_files):
-    #   matched['tran_fun'](matched['name'], matched['new_name'])
-    #   done = QLabel('完成')
-    #   palette = done.palette()
-    #   palette.setColor(QPalette.WindowText, QColor(255, 0, 0))
-    #   self.file_table.setCellWidget(r, 2, done)
-    #   self.file_table.selectRow(r)
-
   def update_file_table_status(self, r):
     self.file_table.setCellWidget(r, 2, Status(True))
     self.file_table.selectRow(r)
