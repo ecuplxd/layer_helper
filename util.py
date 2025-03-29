@@ -59,6 +59,9 @@ def del_folder(folder: str, recreate=True):
 def get_file_name(file: str):
   return os.path.splitext(os.path.abspath(file))[0]
 
+def get_file_folder(file: str):
+  return os.path.dirname(get_file_name(file))
+
 
 def file_2_type(file, ext='pdf'):
   return os.path.normpath(get_file_name(file) + '.' + ext)
@@ -108,11 +111,21 @@ def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
     new_doc.insert_pdf(doc, from_page=0, to_page=-1)
     doc.close()
 
-  new_doc.save(new_name)
-  new_doc.close()
+  out, new_name = merged_name(pdf_files[0], new_name)
+  save_pdf(new_doc, out, new_name)
 
   if del_raw:
     del_files(pdf_files)
+
+
+def merged_name(file: str, new_name: str = None):
+  out = get_file_folder(file)
+
+  if not new_name:
+    time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    new_name = f'merged-{time_str}'
+
+  return out, new_name
 
 
 def _extract_pdf(doc, s, e):
@@ -279,8 +292,15 @@ def correct_img_orien(img_file: str, new_name: str = None):
 
 def main():
   # correct_img_orien('./_test/2.jpg', './test.jpg')
-  split_pdf('./_test/pdf/S30C-0i25032516150.pdf')
-
+  # split_pdf('./_test/pdf/S30C-0i25032516150.pdf')
+  merge_pdf(['./_test/pdf/S30C-0i25031710240.pdf',
+                      './_test/pdf/S30C-0i25032516120.pdf',
+                      './_test/pdf/S30C-0i25032516150.pdf',
+                      './_test/pdf/S30C-0i25032609510.pdf',
+                      './_test/pdf/S30C-0i25032610080.pdf',
+                      './_test/pdf/S30C-0i25032717070.pdf',
+                      './_test/pdf/S30C-0i25032814300.pdf',
+                      './_test/pdf/S30C-0i25032814320.pdf', ])
 
 if __name__ == '__main__':
   main()
