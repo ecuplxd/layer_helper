@@ -59,6 +59,7 @@ def del_folder(folder: str, recreate=True):
 def get_file_name(file: str):
   return os.path.splitext(os.path.abspath(file))[0]
 
+
 def get_file_folder(file: str):
   return os.path.dirname(get_file_name(file))
 
@@ -111,14 +112,14 @@ def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
     new_doc.insert_pdf(doc, from_page=0, to_page=-1)
     doc.close()
 
-  out, new_name = merged_name(pdf_files[0], new_name)
+  out, new_name = merge_name(pdf_files[0], new_name)
   save_pdf(new_doc, out, new_name)
 
   if del_raw:
     del_files(pdf_files)
 
 
-def merged_name(file: str, new_name: str = None):
+def merge_name(file: str, new_name: str = None):
   out = get_file_folder(file)
 
   if not new_name:
@@ -128,14 +129,20 @@ def merged_name(file: str, new_name: str = None):
   return out, new_name
 
 
-def _extract_pdf(doc, s, e):
+def save_pdf(doc, out, name):
+  make_dir(out)
+  doc.save(os.path.join(out, name + '.pdf'))
+  doc.close()
+
+
+def _extract_pdf(doc, s=0, e=-1):
   new_doc = fitz.open()
   new_doc.insert_pdf(doc, from_page=s, to_page=e)
 
   return new_doc
 
 
-def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None):
+def extract_pdf(pdf_file, s: int = 0, e=-1, out: str = None, new_name: str = None):
   """
   提取 pdf 文件指定页码范围为一个新的 pdf 文件
   :param pdf_file:
@@ -148,16 +155,17 @@ def extract_pdf(pdf_file, s: int = 0, e=0, out: str = None, new_name: str = None
   doc = fitz.open(pdf_file)
   new_doc = _extract_pdf(doc, s, e)
 
-  out = out or get_file_name(pdf_file)
-  new_name = new_name or f'part_{s + 1}_{e + 1}'
+  out, new_name, _ = extract_name(pdf_file, s, e, out, new_name)
   save_pdf(new_doc, out, new_name)
   doc.close()
 
 
-def save_pdf(doc, out, name):
-  make_dir(out)
-  doc.save(os.path.join(out, name + '.pdf'))
-  doc.close()
+def extract_name(pdf_file: str, s: int, e: int, out: str = None, new_name: str = None):
+  out = out or get_file_name(pdf_file)
+  new_name = new_name or f'part_{s + 1}_{e + 1}'
+  full = os.path.normpath(os.path.join(out, new_name + '.pdf'))
+
+  return out, new_name, full
 
 
 def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None, r=0):
@@ -190,19 +198,18 @@ def get_pdf_page(pdf_file: str):
   return count
 
 
-def preview_split_pdf(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
+def split_name(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
   outputs = []
   page_num = e or get_pdf_page(pdf_file)
-  out = out or get_file_name(pdf_file)
 
   for i in range(s, page_num, step):
-    end = min(i + step - 1, page_num - 1)
     if new_name:
-      full = os.path.join(out, f'{i}_{new_name}' + '.pdf')
+      _, _, full = extract_name(pdf_file, i, f'{i}_{new_name}')
     else:
-      full = os.path.join(out, f'part_{i + 1}_{end + 1}' + '.pdf')
+      end = min(i + step - 1, page_num - 1)
+      _, _, full = extract_name(pdf_file, i, end)
 
-    outputs.append(full)
+    outputs.append(os.path.normpath(full))
 
   return outputs
 
@@ -294,13 +301,14 @@ def main():
   # correct_img_orien('./_test/2.jpg', './test.jpg')
   # split_pdf('./_test/pdf/S30C-0i25032516150.pdf')
   merge_pdf(['./_test/pdf/S30C-0i25031710240.pdf',
-                      './_test/pdf/S30C-0i25032516120.pdf',
-                      './_test/pdf/S30C-0i25032516150.pdf',
-                      './_test/pdf/S30C-0i25032609510.pdf',
-                      './_test/pdf/S30C-0i25032610080.pdf',
-                      './_test/pdf/S30C-0i25032717070.pdf',
-                      './_test/pdf/S30C-0i25032814300.pdf',
-                      './_test/pdf/S30C-0i25032814320.pdf', ])
+             './_test/pdf/S30C-0i25032516120.pdf',
+             './_test/pdf/S30C-0i25032516150.pdf',
+             './_test/pdf/S30C-0i25032609510.pdf',
+             './_test/pdf/S30C-0i25032610080.pdf',
+             './_test/pdf/S30C-0i25032717070.pdf',
+             './_test/pdf/S30C-0i25032814300.pdf',
+             './_test/pdf/S30C-0i25032814320.pdf', ])
+
 
 if __name__ == '__main__':
   main()
