@@ -1,7 +1,7 @@
 from typing import List, Any, Dict
 
 from PySide6.QtCore import Signal, QObject, Qt
-from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QHBoxLayout, QLabel, QPushButton
 
 
 class Status(QLabel):
@@ -42,13 +42,13 @@ def clear_layout(layout):
         clear_layout(item.layout())
 
 
-def text_field(label: str, hint='选填'):
+def text_field(label: str, hint='选填', val: str = None):
   return {
     'label': label,
     'type': 'text',
     'default': None,
     'hint': hint,
-    'val': None,
+    'val': val,
   }
 
 
@@ -63,6 +63,9 @@ def num_filed(label: str):
 
 def collect_field_vals(items: List[Any]):
   result = []
+
+  if not items or len(items) == 0:
+    return result
 
   if isinstance(items[0], list):
     for row in items:
@@ -110,7 +113,7 @@ def update_field(v, config):
   NOTIFY.field_updated.emit()
 
 
-def render_fields(items: List[Any]):
+def render_fields(items: List[Any], i=None):
   widget = QWidget()
   h = QHBoxLayout()
   h.setAlignment(Qt.AlignLeft)
@@ -119,6 +122,11 @@ def render_fields(items: List[Any]):
     label, control = create_field(item)
     h.addWidget(label)
     h.addWidget(control)
+
+  if i is not None:
+    btn = QPushButton('删除')
+    h.addWidget(btn)
+    btn.pressed.connect(widget.deleteLater)
 
   widget.setLayout(h)
 

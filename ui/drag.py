@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget
+from natsort import natsorted
 
 
 class DragDropWidget(QWidget):
@@ -20,5 +21,6 @@ class DragDropWidget(QWidget):
       event.accept()
       urls = event.mimeData().urls()
       result = [url.toLocalFile() for url in urls]
+      sorted_files = natsorted(result)
 
-      self.dropped.emit(result)
+      self.dropped.emit(sorted_files)

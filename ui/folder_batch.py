@@ -87,8 +87,8 @@ class FolderBatchWidget(QWidget):
     self.setLayout(layout)
 
     self.funcs_select.currentIndexChanged.connect(self.show_file_type)
-    view_btn.clicked.connect(self.choose_folders)
-    ok_btn.clicked.connect(self.exec_fun)
+    view_btn.pressed.connect(self.choose_folders)
+    ok_btn.pressed.connect(self.exec_fun)
     self.funcs_select.setCurrentIndex(1)
 
   def show_file_type(self, i: int = 0):
