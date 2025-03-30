@@ -5,6 +5,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QTabWidget
 
 from ui.folder_batch import FolderBatchWidget
+from ui.image import ImageWidget
 from ui.pdf import PDFWidget
 
 
@@ -12,7 +13,8 @@ class MainWindow(QMainWindow):
   tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '文件挑选', '新版诉状', '常规文书', '关于']
   tab_widgets = {
     'PDF': PDFWidget,
-    '批处理': FolderBatchWidget
+    '批处理': FolderBatchWidget,
+    '图片': ImageWidget
   }
 
   def __init__(self):
@@ -28,6 +30,7 @@ class MainWindow(QMainWindow):
 
     tab_widget = self.init_tab()
     self.centralWidget().layout().addWidget(tab_widget)
+    # tab_widget.setCurrentIndex(3)
 
   def init_copyright(self):
     self.setWindowTitle('律师小助手——by 超萌超可爱')

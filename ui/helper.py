@@ -1,6 +1,10 @@
-from typing import List, Any, Dict
+from dataclasses import dataclass
+from enum import Enum
+from typing import List, TypeVar
 
+import cv2
 from PySide6.QtCore import Signal, QObject, Qt
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QHBoxLayout, QLabel, QPushButton
 
 
@@ -61,73 +65,120 @@ def num_filed(label: str):
   }
 
 
-def collect_field_vals(items: List[Any]):
-  result = []
+class VarType(Enum):
+  TEXT = 1
+  BOOL = 2
+  NUM = 3
+  DATE = 4
 
-  if not items or len(items) == 0:
+
+T = TypeVar('T')
+
+
+@dataclass
+class Field:
+  label: str
+  type: VarType = VarType.TEXT
+  val: T = None
+  hint: str = ''
+  default: T = None
+
+  changed = Signal(T)
+
+  def set_val(self, val: T):
+    self.val = val
+    NOTIFY.field_updated.emit()
+
+  def render(self):
+    label = QLabel(self.label + '：')
+    val = self.val
+    val_type = self.type
+    control = QWidget()
+
+    if val is None:
+      val = self.default
+
+    if self.type == VarType.NUM:
+      control = QSpinBox()
+      control.setValue(val)
+      control.valueChanged.connect(self.set_val)
+    elif val_type == VarType.BOOL:
+      control = QCheckBox()
+      control.setChecked(val)
+    elif val_type == VarType.TEXT:
+      control = QLineEdit()
+      control.setText(val)
+      control.setPlaceholderText(self.hint)
+      control.textChanged.connect(self.set_val)
+
+    return label, control
+
+
+@dataclass
+class Fields:
+  name: str
+  items: List[Field | List[Field]]
+  is_arr: bool = False
+
+  def size(self):
+    return len(self.items)
+
+  def get_item(self, i=0):
+    return self.items[i]
+
+  def del_item(self, i: int):
+    self.items.pop(i)
+
+  @staticmethod
+  def render(fields: List[Field], i=None):
+    widget = QWidget()
+    h = QHBoxLayout()
+    h.setAlignment(Qt.AlignLeft)
+
+    for field in fields:
+      label, control = field.render()
+      h.addWidget(label)
+      h.addWidget(control)
+
+    if i is not None:
+      btn = QPushButton('删除')
+      h.addWidget(btn)
+      btn.pressed.connect(widget.deleteLater)
+
+    widget.setLayout(h)
+
+    return widget
+
+  @staticmethod
+  def get_val(fields: List[Field]):
+    val = {}
+    for field in fields:
+      val[field.label] = field.val
+    return val
+
+  def append(self, field: Field):
+    self.items.append(field)
+
+  def get_vals(self):
+    result = []
+
+    if not self.items or len(self.items) == 0:
+      return result
+
+    if self.is_arr:
+      for group in self.items:
+        result.append(Fields.get_val(group))
+    else:
+      result.append(Fields.get_val(self.items))
+
     return result
 
-  if isinstance(items[0], list):
-    for row in items:
-      result.append(collect_field_val(row))
-  else:
-    result.append(collect_field_val(items))
 
-  return result
+def cv_2_qimage(image):
+  image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+  height, width, channel = image_rgb.shape
+  bytes_per_line = channel * width
+  q_image = QImage(image_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
+  pixmap = QPixmap.fromImage(q_image)
 
-
-def collect_field_val(items):
-  val = {}
-  for item in items:
-    val[item['label']] = item['val']
-  return val
-
-
-def create_field(config: Dict):
-  label = QLabel(config['label'] + '：')
-  val = config.get('val')
-  val_type = config['type']
-  control = QWidget()
-
-  if val is None:
-    val = config.get('default')
-
-  if val_type == 'num':
-    control = QSpinBox()
-    control.setValue(val)
-    control.valueChanged.connect(lambda x: update_field(x, config))
-  elif val_type == 'bool':
-    control = QCheckBox()
-    control.setChecked(val)
-  elif val_type == 'text':
-    control = QLineEdit()
-    control.setText(val)
-    control.setPlaceholderText(config['hint'])
-    control.textChanged.connect(lambda x: update_field(x, config))
-
-  return label, control
-
-
-def update_field(v, config):
-  config['val'] = v
-  NOTIFY.field_updated.emit()
-
-
-def render_fields(items: List[Any], i=None):
-  widget = QWidget()
-  h = QHBoxLayout()
-  h.setAlignment(Qt.AlignLeft)
-
-  for item in items:
-    label, control = create_field(item)
-    h.addWidget(label)
-    h.addWidget(control)
-
-  if i is not None:
-    btn = QPushButton('删除')
-    h.addWidget(btn)
-    btn.pressed.connect(widget.deleteLater)
-
-  widget.setLayout(h)
-
-  return widget
+  return pixmap
