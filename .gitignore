@@ -4,3 +4,4 @@ _test
 *.pyc
 __pycache__
 .venv
+main.*
