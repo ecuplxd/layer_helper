@@ -12,6 +12,7 @@ import cv2
 import fitz
 import numpy as np
 import pandas as pd
+from cv2.typing import MatLike
 from pymupdf.mupdf import PDF_ENCRYPT_KEEP
 from pytesseract import pytesseract
 from scipy import ndimage
@@ -291,6 +292,16 @@ def img_2_pdf(img_file: str, new_name: str = None):
   doc.save(new_name)
 
 
+def cv_img_2_pdf(img_file: str, image: MatLike):
+  temp_name = './temp123456.jpg'
+  new_name = file_2_type(img_file)
+  write_img(image, temp_name)
+  img_2_pdf(temp_name, new_name)
+  os.remove(temp_name)
+
+  return new_name
+
+
 # word 工具类
 def merge_word(word_files: List[str], new_name: str):
   pass
@@ -355,7 +366,7 @@ def get_rotate_angle(image):
 
 def correct_img_orien(image):
   out = get_rotate_angle(image)
-  img_rotated = rotate_img(image, 360 - out["Rotate"])
+  img_rotated = rotate_img(image, out["Rotate"])
 
   return img_rotated
 

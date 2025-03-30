@@ -7,7 +7,7 @@ from cv2.typing import MatLike
 from ui.drag import DragDropWidget
 from ui.helper import cv_2_qimage
 from util import read_img, img_bleach, make_dir, correct_img_orien, write_img, get_file_folder, \
-  file_name_and_ext
+  file_name_and_ext, cv_img_2_pdf, merge_pdf
 
 
 class ImageWidget(DragDropWidget):
@@ -77,10 +77,14 @@ class ImageWidget(DragDropWidget):
     h2 = QHBoxLayout()
     clear = QPushButton('清空')
     save = QPushButton('保存')
+    save_as_pdf = QPushButton('存为 PDF')
+    save_as_merge_pdf = QPushButton('合并为 PDF')
     h2.addStretch()
     h2.addWidget(self.status)
     h2.addWidget(clear)
     h2.addWidget(save)
+    h2.addWidget(save_as_pdf)
+    h2.addWidget(save_as_merge_pdf)
 
     layout.addLayout(header)
     layout.addLayout(self.config_layout)
@@ -89,8 +93,27 @@ class ImageWidget(DragDropWidget):
 
     clear.pressed.connect(self.clear_table)
     save.pressed.connect(self.save_result)
+    save_as_pdf.pressed.connect(self.save_pdf)
+    save_as_merge_pdf.pressed.connect(self.save_merged_pdf)
     self.dropped.connect(self.update_table)
     self.setLayout(layout)
+
+  def save_pdf(self):
+    total = len(self.files)
+
+    for r, image in enumerate(self.last_images):
+      cv_img_2_pdf(self.files[r], image)
+      self.table.selectRow(r)
+      self.table.setCellWidget(r, 3, QLabel('√'))
+      self.status.setText(f'{r + 1}/{total}')
+
+  def save_merged_pdf(self):
+    self.status.setText('合并中，请稍后...')
+    pdf_files = []
+    for r, image in enumerate(self.last_images):
+      pdf_files.append(cv_img_2_pdf(self.files[r], image))
+    merge_pdf(pdf_files, del_raw=True)
+    self.status.setText('合并完成！')
 
   def preview_op(self, name: str):
     fn = None
