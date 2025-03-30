@@ -6,41 +6,32 @@ from PySide6.QtWidgets import QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
   QTreeWidget, QTreeWidgetItem, QLabel
 
 from ui.drag import DragDropWidget
-from ui.helper import clear_layout, text_field, num_filed, render_fields, collect_field_vals, NOTIFY, \
-  clear_all_children
+from ui.helper import clear_layout, NOTIFY, \
+  clear_all_children, Fields, Field, VarType
 from util import split_name, list_at, get_pdf_page, split_pdf, merge_pdf, extract_name, extract_pdf
 
 
 def regular_config():
   return [
-    num_filed('页数'),
-    text_field('新文件名'),
+    Field(label='页数', type=VarType.NUM, val=1),
+    Field(label='新文件名'),
   ]
 
 
-def unregular_config():
+def un_regular_config():
   return [
-    text_field('范围', '1-3'),
-    text_field('新文件名'),
+    Field(label='范围', hint='1 或 1-3'),
+    Field(label='新文件名'),
   ]
 
 
 class PDFWidget(DragDropWidget):
   config_map = {
-    '规则分割': {
-      'items': [regular_config()]
-    },
-    '不规则分割': {
-      'arr': True,
-      'items': [
-        unregular_config(),
-      ],
-    },
-    '合并': {
-      'items': [
-        text_field('新文件名', '默认名为：merged-年月日时分秒'),
-      ]
-    },
+    '规则分割': Fields('规则分割', [regular_config()]),
+    '不规则分割': Fields('不规则分割', [un_regular_config()], is_arr=True),
+    '合并': Fields('合并', [
+      Field(label='新文件名', hint='默认名为：merged-年月日时分秒')],
+                   )
   }
 
   files: List[str] = []
@@ -96,13 +87,13 @@ class PDFWidget(DragDropWidget):
     self.setLayout(layout)
 
   def add_field(self, idx=None):
-    items = self.cur_config_items()
+    fields = self.cur_config_fields()
 
     if idx is None:
-      items.append(unregular_config())
-      idx = len(items) - 1
+      fields.append(un_regular_config())
+      idx = fields.size() - 1
 
-    widget = render_fields(items[idx], idx)
+    widget = Fields.render(fields.get_item(idx), idx)
     btn = widget.findChild(QPushButton)
     btn.pressed.connect(lambda: self._test(idx))
 
@@ -110,14 +101,14 @@ class PDFWidget(DragDropWidget):
     self.update_table()
 
   def _test(self, i):
-    items = self.cur_config_items()
-    items.pop(i)
+    fields = self.cur_config_fields()
+    fields.del_item(i)
     self.update_config_ui()
     self.update_table()
 
   def update_config_ui(self):
     idx = self.funcs.currentIndex()
-    items = self.cur_config_items()
+    fields = self.cur_config_fields()
     clear_layout(self.config_layout)
     self.clear_files()
     self.add_btn.hide()
@@ -129,10 +120,10 @@ class PDFWidget(DragDropWidget):
       if idx == 1:
         self.add_btn.show()
 
-        for i, _ in enumerate(items):
+        for i in range(fields.size()):
           self.add_field(i)
       elif idx == 2:
-        self.config_layout.addWidget(render_fields(items))
+        self.config_layout.addWidget(Fields.render(fields.items))
 
   def update_table(self, files: List[str] = None):
     if files:
@@ -150,18 +141,19 @@ class PDFWidget(DragDropWidget):
 
       for r, file in enumerate(files):
         item = self.file_tree.topLevelItem(r)
-        items = self.cur_config_items()
-        fields = list_at(items, r)
+        fields = self.cur_config_fields()
+        items = list_at(fields.items, r)
 
-        if not fields:
-          fields = regular_config()
-          items.append(fields)
+        if not items:
+          items = regular_config()
+          fields.append(items)
 
-        config = collect_field_vals(fields)[0]
+        config = Fields.get_val(items)
+        print(config)
 
         if not item:
           item = QTreeWidgetItem(self.file_tree)
-          self.file_tree.setItemWidget(item, 1, render_fields(fields))
+          self.file_tree.setItemWidget(item, 1, Fields.render(items))
 
         # Perf：解决渲染过慢的问题
         item.setExpanded(False)
@@ -181,7 +173,7 @@ class PDFWidget(DragDropWidget):
         item.setExpanded(True)
     else:
       self.file_tree.clear()
-      vals = collect_field_vals(self.cur_config_items())
+      vals = self.cur_config_fields().get_vals()
 
       for file in self.files:
         self.total += len(vals)
@@ -208,7 +200,7 @@ class PDFWidget(DragDropWidget):
           tree_item.setExpanded(True)
 
   def parse_range(self, pdf_file: str):
-    vals = collect_field_vals(self.cur_config_items())
+    vals = self.cur_config_fields().get_vals()
     page_num = get_pdf_page(pdf_file)
     result = []
 
@@ -251,10 +243,10 @@ class PDFWidget(DragDropWidget):
 
     self.status.setText(f'{self.cur}/{self.total}')
 
-  def cur_config_items(self):
-    config = self.config_map[self.funcs.currentText()]
+  def cur_config_fields(self):
+    fields = self.config_map[self.funcs.currentText()]
 
-    return config['items']
+    return fields
 
   def clear_files(self):
     self.files = []
@@ -263,8 +255,8 @@ class PDFWidget(DragDropWidget):
 
   def exe_fun(self):
     self.cur = 0
-    items = self.cur_config_items()
-    vals = collect_field_vals(items)
+    fields = self.cur_config_fields()
+    vals = fields.get_vals()
     fun_name = self.funcs.currentText()
 
     if fun_name == '规则分割':

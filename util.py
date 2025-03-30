@@ -60,6 +60,10 @@ def get_file_name(file: str):
   return os.path.splitext(os.path.abspath(file))[0]
 
 
+def file_name_and_ext(file):
+  return os.path.splitext(os.path.basename(file))
+
+
 def get_file_folder(file: str):
   return os.path.dirname(get_file_name(file))
 
@@ -160,7 +164,7 @@ def extract_pdf(pdf_file, s: int = 0, e=-1, out: str = None, new_name: str = Non
   doc.close()
 
 
-def extract_name(pdf_file: str, s: int, e: int, out: str = None, new_name: str = None):
+def extract_name(pdf_file: str, s: int = 0, e: int = -1, out: str = None, new_name: str = None):
   out = out or get_file_name(pdf_file)
   new_name = new_name or f'part_{s + 1}_{e + 1}'
   full = os.path.normpath(os.path.join(out, new_name + '.pdf'))
@@ -204,10 +208,10 @@ def split_name(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
 
   for i in range(s, page_num, step):
     if new_name:
-      _, _, full = extract_name(pdf_file, i, f'{i}_{new_name}')
+      _, _, full = extract_name(pdf_file, out=out, new_name=f'{i}_{new_name}')
     else:
       end = min(i + step - 1, page_num - 1)
-      _, _, full = extract_name(pdf_file, i, end)
+      _, _, full = extract_name(pdf_file, i, end, out)
 
     outputs.append(os.path.normpath(full))
 
@@ -281,6 +285,26 @@ def rotate_img(img_file: str):
   pass
 
 
+def img_bleach(image, window_size=15, k=0.2, r=128):
+  if len(image.shape) > 2:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+  else:
+    gray = image
+
+  mean = cv2.blur(gray, (window_size, window_size))
+  mean_square = cv2.blur(gray * gray, (window_size, window_size))
+  std = np.sqrt(mean_square - mean * mean)
+
+  # 计算阈值
+  threshold = mean * (1 + k * (std / r - 1))
+
+  # 阈值化图像
+  binary = np.zeros_like(gray)
+  binary[gray > threshold] = 255
+
+  return binary
+
+
 def float_convertor(x):
   if x.isdigit():
     out = float(x)
@@ -289,25 +313,45 @@ def float_convertor(x):
   return out
 
 
-def correct_img_orien(img_file: str, new_name: str = None):
-  img = cv2.imread(img_file)
-  k = pytesseract.image_to_osd(img)
+def resize_im(im, scale, max_scale=None):
+  f = float(scale) / min(im.shape[0], im.shape[1])
+
+  if max_scale is not None and f * max(im.shape[0], im.shape[1]) > max_scale:
+    f = float(max_scale) / max(im.shape[0], im.shape[1])
+
+  return cv2.resize(im, (0, 0), fx=f, fy=f)
+
+
+def correct_img_orien(image):
+  # resized_img = resize_im(image, scale=600, max_scale=1200)
+  k = pytesseract.image_to_osd(image, config='--psm 0')
   out = {i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n")}
-  img_rotated = ndimage.rotate(img, 360 - out["Rotate"])
-  cv2.imwrite(new_name or img_file, img_rotated)
+  img_rotated = ndimage.rotate(image, 360 - out["Rotate"])
+
+  return img_rotated
+
+
+def read_img(img_file: str):
+  with open(img_file, 'rb') as f:
+    return cv2.imdecode(np.frombuffer(f.read(), np.int8), cv2.IMREAD_COLOR)
+
+
+def write_img(image, name):
+  ext = name.split('.')[-1]
+
+  with open(name, 'wb') as f:
+    ret, buf = cv2.imencode(f".{ext}", image)
+    if ret:
+      f.write(buf.tobytes())
+      return True
+    else:
+      return False
 
 
 def main():
-  # correct_img_orien('./_test/2.jpg', './test.jpg')
-  # split_pdf('./_test/pdf/S30C-0i25032516150.pdf')
-  merge_pdf(['./_test/pdf/S30C-0i25031710240.pdf',
-             './_test/pdf/S30C-0i25032516120.pdf',
-             './_test/pdf/S30C-0i25032516150.pdf',
-             './_test/pdf/S30C-0i25032609510.pdf',
-             './_test/pdf/S30C-0i25032610080.pdf',
-             './_test/pdf/S30C-0i25032717070.pdf',
-             './_test/pdf/S30C-0i25032814300.pdf',
-             './_test/pdf/S30C-0i25032814320.pdf', ])
+  img = read_img('./_test/imgs/微信图片_20250328111930.jpg')
+  new_image = img_bleach(img)
+  cv2.imwrite('./test.jpg', new_image)
 
 
 if __name__ == '__main__':
