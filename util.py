@@ -12,6 +12,7 @@ import cv2
 import fitz
 import numpy as np
 import pandas as pd
+from pymupdf.mupdf import PDF_ENCRYPT_KEEP
 from pytesseract import pytesseract
 from scipy import ndimage
 from win32com.client import DispatchEx
@@ -135,7 +136,7 @@ def merge_name(file: str, new_name: str = None):
 
 def save_pdf(doc, out, name):
   make_dir(out)
-  doc.save(os.path.join(out, name + '.pdf'))
+  doc.save(os.path.join(out, name + '.pdf'), garbage=4)
   doc.close()
 
 
@@ -219,22 +220,41 @@ def split_name(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
 
 
 def ocr_pdf(pdf_file: str, page=0, dpi=350):
-  doc = fitz.open(pdf_file)
-  page = doc.load_page(page)
-  pix = page.get_pixmap(dpi)
-  img = np.frombuffer(pix.samples_mv, dtype=np.uint8).reshape((pix.height, pix.width, 3)).copy()
+  img = pdf_2_image(pdf_file, page, dpi)
   result = pytesseract.image_to_string(img, lang='chi_sim')
   result = result.replace(' ', '')
 
   return result
 
 
+def pdf_2_image(pdf_file: str, page=0, dpi=350):
+  doc = fitz.open(pdf_file)
+  page = doc.load_page(page)
+  pix = page.get_pixmap(dpi=dpi)
+  img = np.frombuffer(pix.samples_mv, dtype=np.uint8).reshape((pix.height, pix.width, 3)).copy()
+  doc.close()
+
+  return img
+
+
 def correct_pdf_orien(pdf_file: str):
-  pass
+  img = pdf_2_image(pdf_file)
+  out = get_rotate_angle(img)
+  rotate_pdf(pdf_file, out["Rotate"])
 
 
-def rotate_pdf(pdf_file: str, angle):
-  pass
+def rotate_pdf(pdf_file: str, angle=0):
+  if angle == 0:
+    return
+
+  angle = int(((360 - angle) / 90) * 90)
+  doc = fitz.open(pdf_file)
+
+  for page in doc:
+    page.set_rotation(angle)
+
+  doc.save(doc.name, incremental=True, encryption=PDF_ENCRYPT_KEEP)
+  doc.close()
 
 
 # https://zhuanlan.zhihu.com/p/384500542
@@ -281,8 +301,11 @@ def split_word(word_file: str, step=1):
 
 
 # 图片类
-def rotate_img(img_file: str):
-  pass
+def rotate_img(image, angle=0):
+  if angle == 0:
+    return image
+
+  return ndimage.rotate(image, 360 - angle)
 
 
 def img_bleach(image, window_size=15, k=0.2, r=128):
@@ -322,11 +345,17 @@ def resize_im(im, scale, max_scale=None):
   return cv2.resize(im, (0, 0), fx=f, fy=f)
 
 
-def correct_img_orien(image):
+def get_rotate_angle(image):
   # resized_img = resize_im(image, scale=600, max_scale=1200)
   k = pytesseract.image_to_osd(image, config='--psm 0')
   out = {i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n")}
-  img_rotated = ndimage.rotate(image, 360 - out["Rotate"])
+
+  return out
+
+
+def correct_img_orien(image):
+  out = get_rotate_angle(image)
+  img_rotated = rotate_img(image, 360 - out["Rotate"])
 
   return img_rotated
 
@@ -349,9 +378,10 @@ def write_img(image, name):
 
 
 def main():
-  img = read_img('./_test/imgs/微信图片_20250328111930.jpg')
-  new_image = img_bleach(img)
-  cv2.imwrite('./test.jpg', new_image)
+  # img = read_img('./_test/imgs/微信图片_20250328111930.jpg')
+  # new_image = img_bleach(img)
+  # cv2.imwrite('./test.jpg', new_image)
+  correct_pdf_orien('./S30C-0i25031710240.pdf')
 
 
 if __name__ == '__main__':

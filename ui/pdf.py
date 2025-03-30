@@ -149,7 +149,6 @@ class PDFWidget(DragDropWidget):
           fields.append(items)
 
         config = Fields.get_val(items)
-        print(config)
 
         if not item:
           item = QTreeWidgetItem(self.file_tree)
