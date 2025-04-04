@@ -3,13 +3,17 @@ from enum import Enum
 from typing import List, TypeVar
 
 import cv2
-from PySide6.QtCore import Signal, QObject, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QWidget, QSpinBox, QCheckBox, QLineEdit, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QWidget
+from cv2.typing import MatLike
+
+from ui.signal import NOTIFY
+from util import read_img
 
 
 class Status(QLabel):
-  def __init__(self, done=False):
+  def __init__(self, done = False):
     super().__init__()
 
     self.setText('待执行')
@@ -20,14 +24,6 @@ class Status(QLabel):
   def done(self):
     self.setText('√')
     self.setStyleSheet("QLabel {color: green}")
-
-
-class Notify(QObject):
-  field_updated = Signal()
-  extracted_pdf = Signal(int, int)
-
-
-NOTIFY = Notify()
 
 
 def clear_all_children(node):
@@ -44,25 +40,6 @@ def clear_layout(layout):
         widget.deleteLater()
       else:
         clear_layout(item.layout())
-
-
-def text_field(label: str, hint='选填', val: str = None):
-  return {
-    'label': label,
-    'type': 'text',
-    'default': None,
-    'hint': hint,
-    'val': val,
-  }
-
-
-def num_filed(label: str):
-  return {
-    'label': label,
-    'type': 'num',
-    'default': 1,
-    'val': 1,
-  }
 
 
 class VarType(Enum):
@@ -117,20 +94,20 @@ class Field:
 @dataclass
 class Fields:
   name: str
-  items: List[Field | List[Field]]
+  items: List[Field|List[Field]]
   is_arr: bool = False
 
   def size(self):
     return len(self.items)
 
-  def get_item(self, i=0):
+  def get_item(self, i = 0):
     return self.items[i]
 
   def del_item(self, i: int):
     self.items.pop(i)
 
   @staticmethod
-  def render(fields: List[Field], i=None):
+  def render(fields: List[Field], i = None):
     widget = QWidget()
     h = QHBoxLayout()
     h.setAlignment(Qt.AlignLeft)
@@ -151,7 +128,7 @@ class Fields:
 
   @staticmethod
   def get_val(fields: List[Field]):
-    val = {}
+    val = { }
     for field in fields:
       val[field.label] = field.val
     return val
@@ -182,3 +159,15 @@ def cv_2_qimage(image):
   pixmap = QPixmap.fromImage(q_image)
 
   return pixmap
+
+
+def read_img_as_qt_thumb(image: str|MatLike):
+  if isinstance(image, str):
+    image = read_img(image)
+
+  pixmap = cv_2_qimage(image)
+  thumbnail = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+  label = QLabel()
+  label.setPixmap(thumbnail)
+
+  return label

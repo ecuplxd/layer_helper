@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 import time
-from typing import List, Any
+from typing import Any, List
 
 import comtypes
 import cv2
@@ -18,7 +18,7 @@ from pytesseract import pytesseract
 from scipy import ndimage
 from win32com.client import DispatchEx
 
-from ui.helper import NOTIFY
+from ui.signal import NOTIFY
 
 
 def parse_sfz(id_str: str):
@@ -30,7 +30,7 @@ def parse_sfz(id_str: str):
   return gender, pd.to_datetime(birth_format)
 
 
-def list_at(l: List[Any], idx: int, default=None):
+def list_at(l: List[Any], idx: int, default = None):
   try:
     return l[idx]
   except IndexError:
@@ -45,7 +45,7 @@ def make_dir(folder: str):
   os.mkdir(folder)
 
 
-def del_folder(folder: str, recreate=True):
+def del_folder(folder: str, recreate = True):
   try:
     if os.path.exists(folder):
       shutil.rmtree(folder)
@@ -70,17 +70,17 @@ def get_file_folder(file: str):
   return os.path.dirname(get_file_name(file))
 
 
-def file_2_type(file, ext='pdf'):
+def file_2_type(file, ext = 'pdf'):
   return os.path.normpath(get_file_name(file) + '.' + ext)
 
 
-def find_file(folder: str, filter_str: str, rec=True):
-  matches = glob.glob(folder + '/' + filter_str, recursive=rec)
+def find_file(folder: str, filter_str: str, rec = True):
+  matches = glob.glob(folder + '/' + filter_str, recursive = rec)
 
   return matches
 
 
-def find_files(folders: List[str], filter_strs: List[str], rec=True):
+def find_files(folders: List[str], filter_strs: List[str], rec = True):
   result = []
 
   for folder in folders:
@@ -98,24 +98,24 @@ def del_files(files: List[str]):
 # json 相关
 def excel_2_json(excel_file: str):
   excel_data = pd.read_excel(excel_file)
-  json_str = excel_data.to_json(orient='records', force_ascii=False)
+  json_str = excel_data.to_json(orient = 'records', force_ascii = False)
   rows = json.loads(json_str)
 
   return rows
 
 
 def json_file_2_json(json_file: str):
-  with open(json_file, encoding='utf-8', mode='r') as f:
+  with open(json_file, encoding = 'utf-8', mode = 'r') as f:
     return json.loads(f.read())
 
 
 # pdf 工具类
-def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw=False):
+def merge_pdf(pdf_files: List[str], new_name: str = None, del_raw = False):
   new_doc = fitz.open()
 
   for file in pdf_files:
     doc = fitz.open(file)
-    new_doc.insert_pdf(doc, from_page=0, to_page=-1)
+    new_doc.insert_pdf(doc, from_page = 0, to_page = -1)
     doc.close()
 
   out, new_name = merge_name(pdf_files[0], new_name)
@@ -137,18 +137,18 @@ def merge_name(file: str, new_name: str = None):
 
 def save_pdf(doc, out, name):
   make_dir(out)
-  doc.save(os.path.join(out, name + '.pdf'), garbage=4)
+  doc.save(os.path.join(out, name + '.pdf'), garbage = 4)
   doc.close()
 
 
-def _extract_pdf(doc, s=0, e=-1):
+def _extract_pdf(doc, s = 0, e = -1):
   new_doc = fitz.open()
-  new_doc.insert_pdf(doc, from_page=s, to_page=e)
+  new_doc.insert_pdf(doc, from_page = s, to_page = e)
 
   return new_doc
 
 
-def extract_pdf(pdf_file, s: int = 0, e=-1, out: str = None, new_name: str = None):
+def extract_pdf(pdf_file, s: int = 0, e = -1, out: str = None, new_name: str = None):
   """
   提取 pdf 文件指定页码范围为一个新的 pdf 文件
   :param pdf_file:
@@ -174,7 +174,7 @@ def extract_name(pdf_file: str, s: int = 0, e: int = -1, out: str = None, new_na
   return out, new_name, full
 
 
-def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None, r=0):
+def split_pdf(pdf_file: str, step = 1, s = 0, e = None, out: str = None, new_name = None, r = 0):
   """
   规则分割 pdf 文件
   :param pdf_file:
@@ -183,6 +183,7 @@ def split_pdf(pdf_file: str, step=1, s=0, e=None, out: str = None, new_name=None
   :param step:
   :param out:
   :param new_name:
+  :param r:
   :return:
   """
   page_num = e or get_pdf_page(pdf_file)
@@ -204,13 +205,13 @@ def get_pdf_page(pdf_file: str):
   return count
 
 
-def split_name(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
+def split_name(pdf_file, step = 1, s = 0, e = None, out = None, new_name = None):
   outputs = []
   page_num = e or get_pdf_page(pdf_file)
 
   for i in range(s, page_num, step):
     if new_name:
-      _, _, full = extract_name(pdf_file, out=out, new_name=f'{i}_{new_name}')
+      _, _, full = extract_name(pdf_file, out = out, new_name = f'{i}_{new_name}')
     else:
       end = min(i + step - 1, page_num - 1)
       _, _, full = extract_name(pdf_file, i, end, out)
@@ -220,31 +221,31 @@ def split_name(pdf_file, step=1, s=0, e=None, out=None, new_name=None):
   return outputs
 
 
-def ocr_pdf(pdf_file: str, page=0, dpi=350):
+def ocr_pdf(pdf_file: str, page = 0, dpi = 350):
   img = pdf_2_image(pdf_file, page, dpi)
-  result = pytesseract.image_to_string(img, lang='chi_sim')
+  result = pytesseract.image_to_string(img, lang = 'chi_sim')
   result = result.replace(' ', '')
 
   return result
 
 
-def pdf_2_image(pdf_file: str, page=0, dpi=350):
+def pdf_2_image(pdf_file: str, page = 0, dpi = 350):
   doc = fitz.open(pdf_file)
   page = doc.load_page(page)
-  pix = page.get_pixmap(dpi=dpi)
-  img = np.frombuffer(pix.samples_mv, dtype=np.uint8).reshape((pix.height, pix.width, 3)).copy()
+  pix = page.get_pixmap(dpi = dpi)
+  img = np.frombuffer(pix.samples_mv, dtype = np.uint8).reshape((pix.height, pix.width, 3)).copy()
   doc.close()
 
   return img
 
 
-def correct_pdf_orien(pdf_file: str):
-  img = pdf_2_image(pdf_file)
-  out = get_rotate_angle(img)
-  rotate_pdf(pdf_file, out["Rotate"])
+def correct_pdf_orient(pdf_file: str, page = 0, new_name: str = None, incremental = False):
+  image = pdf_2_image(pdf_file, page)
+  angle = get_rotate_angle(image)['Rotate']
+  rotate_pdf(pdf_file, angle)
 
 
-def rotate_pdf(pdf_file: str, angle=0):
+def rotate_pdf(pdf_file: str, angle: float = 0.0, new_name: str = None, incremental = False):
   if angle == 0:
     return
 
@@ -254,7 +255,12 @@ def rotate_pdf(pdf_file: str, angle=0):
   for page in doc:
     page.set_rotation(angle)
 
-  doc.save(doc.name, incremental=True, encryption=PDF_ENCRYPT_KEEP)
+  if incremental:
+    doc.save(doc.name, incremental = True, encryption = PDF_ENCRYPT_KEEP)
+  else:
+    name = new_name or doc.name.replace('.pdf', f'-校正方向.pdf')
+    doc.save(name)
+    
   doc.close()
 
 
@@ -265,7 +271,7 @@ def word_2_pdf(word_file: str, new_name: str = None):
   word = comtypes.client.CreateObject('Word.Application')
   doc = word.Documents.Open(word_file)
   new_name = new_name or file_2_type(word_file)
-  doc.SaveAs(new_name, FileFormat=wdFormatPDF)
+  doc.SaveAs(new_name, FileFormat = wdFormatPDF)
   doc.Close()
   word.Quit()
 
@@ -307,19 +313,19 @@ def merge_word(word_files: List[str], new_name: str):
   pass
 
 
-def split_word(word_file: str, step=1):
+def split_word(word_file: str, step = 1):
   pass
 
 
 # 图片类
-def rotate_img(image, angle=0):
+def rotate_img(image, angle = 0):
   if angle == 0:
     return image
 
   return ndimage.rotate(image, 360 - angle)
 
 
-def img_bleach(image, window_size=15, k=0.2, r=128):
+def img_bleach(image, window_size = 15, k = 0.2, r = 128):
   if len(image.shape) > 2:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
   else:
@@ -347,26 +353,26 @@ def float_convertor(x):
   return out
 
 
-def resize_im(im, scale, max_scale=None):
+def resize_im(im, scale, max_scale = None):
   f = float(scale) / min(im.shape[0], im.shape[1])
 
   if max_scale is not None and f * max(im.shape[0], im.shape[1]) > max_scale:
     f = float(max_scale) / max(im.shape[0], im.shape[1])
 
-  return cv2.resize(im, (0, 0), fx=f, fy=f)
+  return cv2.resize(im, (0, 0), fx = f, fy = f)
 
 
 def get_rotate_angle(image):
   # resized_img = resize_im(image, scale=600, max_scale=1200)
-  k = pytesseract.image_to_osd(image, config='--psm 0')
-  out = {i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n")}
+  k = pytesseract.image_to_osd(image, config = '--psm 0')
+  out = { i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n") }
 
   return out
 
 
-def correct_img_orien(image):
+def correct_img_orient(image):
   out = get_rotate_angle(image)
-  img_rotated = rotate_img(image, out["Rotate"])
+  img_rotated = rotate_img(image, out['Rotate'])
 
   return img_rotated
 
@@ -392,7 +398,7 @@ def main():
   # img = read_img('./_test/imgs/微信图片_20250328111930.jpg')
   # new_image = img_bleach(img)
   # cv2.imwrite('./test.jpg', new_image)
-  correct_pdf_orien('./S30C-0i25031710240.pdf')
+  correct_pdf_orient('./S30C-0i25031710240.pdf')
 
 
 if __name__ == '__main__':

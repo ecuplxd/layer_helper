@@ -1,48 +1,49 @@
-from typing import List, Any
+from typing import Any, List
 
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QLabel, QHeaderView
+from PySide6.QtCore import QThread, Signal
+from PySide6.QtWidgets import QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QVBoxLayout
 from cv2.typing import MatLike
 
 from ui.drag import DragDropWidget
-from ui.helper import cv_2_qimage
-from util import read_img, img_bleach, make_dir, correct_img_orien, write_img, get_file_folder, \
-  file_name_and_ext, cv_img_2_pdf, merge_pdf
+from ui.helper import read_img_as_qt_thumb
+from util import (correct_img_orient, cv_img_2_pdf, file_name_and_ext, get_file_folder, img_bleach, make_dir, merge_pdf,
+                  read_img, write_img,
+                  )
 
 
 class ImageWidget(DragDropWidget):
-  funcs = [{'name': '漂白',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '倾斜校正',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '清晰增强',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '去噪',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '去阴影',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '扭曲校正',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '切边',
-            'exec': '',
-            'config': {}
-            },
-           {'name': '减小文件大小',
-            'fun': '',
-            'config': {}
-            }
+  funcs = [{ 'name'  : '漂白',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '校正方向',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '清晰增强',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '去噪',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '去阴影',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '扭曲校正',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '切边',
+             'exec'  : '',
+             'config': { }
+             },
+           { 'name'  : '减小文件大小',
+             'fun'   : '',
+             'config': { }
+             }
            ]
   last_images: List[MatLike] = []
   rendered = False
@@ -62,7 +63,7 @@ class ImageWidget(DragDropWidget):
     for fun in self.funcs:
       name: str = fun['name']
       btn = QPushButton(name)
-      btn.pressed.connect(lambda x=name: self.preview_op(x))
+      btn.pressed.connect(lambda x = name: self.preview_op(x))
       header.addWidget(btn)
     header.addStretch()
 
@@ -75,12 +76,14 @@ class ImageWidget(DragDropWidget):
     self.table.verticalHeader().setDefaultSectionSize(250)
 
     h2 = QHBoxLayout()
+    reset = QPushButton('重置')
     clear = QPushButton('清空')
     save = QPushButton('保存')
     save_as_pdf = QPushButton('存为 PDF')
     save_as_merge_pdf = QPushButton('合并为 PDF')
     h2.addStretch()
     h2.addWidget(self.status)
+    h2.addWidget(reset)
     h2.addWidget(clear)
     h2.addWidget(save)
     h2.addWidget(save_as_pdf)
@@ -91,12 +94,19 @@ class ImageWidget(DragDropWidget):
     layout.addWidget(self.table)
     layout.addLayout(h2)
 
+    reset.pressed.connect(self.reset_ops)
     clear.pressed.connect(self.clear_table)
     save.pressed.connect(self.save_result)
     save_as_pdf.pressed.connect(self.save_pdf)
     save_as_merge_pdf.pressed.connect(self.save_merged_pdf)
     self.dropped.connect(self.update_table)
     self.setLayout(layout)
+
+  def reset_ops(self):
+    self.last_images = []
+    for r, file in enumerate(self.files):
+      self.last_images.append(read_img(file))
+      self.table.setCellWidget(r, 2, QLabel())
 
   def save_pdf(self):
     total = len(self.files)
@@ -112,7 +122,7 @@ class ImageWidget(DragDropWidget):
     pdf_files = []
     for r, image in enumerate(self.last_images):
       pdf_files.append(cv_img_2_pdf(self.files[r], image))
-    merge_pdf(pdf_files, del_raw=True)
+    merge_pdf(pdf_files, del_raw = True)
     self.status.setText('合并完成！')
 
   def preview_op(self, name: str):
@@ -120,8 +130,8 @@ class ImageWidget(DragDropWidget):
 
     if name == '漂白':
       fn = img_bleach
-    elif name == '倾斜校正':
-      fn = correct_img_orien
+    elif name == '校正方向':
+      fn = correct_img_orient
     else:
       pass
 
@@ -175,13 +185,8 @@ class ImageWidget(DragDropWidget):
     self.status.setText(f'共 {len(self.files)} 个')
 
   def preview_result(self, r: int, image: MatLike, col: bool):
-    pixmap = cv_2_qimage(image)
-    thumbnail = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-    label = QLabel()
-    label.setPixmap(thumbnail)
-
     self.last_images.append(image)
-    self.table.setCellWidget(r, col + 1, label)
+    self.table.setCellWidget(r, col + 1, read_img_as_qt_thumb(image))
     self.table.selectRow(r)
     self.status.setText(f'{r + 1}/{len(self.files)}')
 
@@ -189,7 +194,7 @@ class ImageWidget(DragDropWidget):
 class Worker(QThread):
   updated = Signal(int, Any, bool)
 
-  def __init__(self, files, func=None, fun_name: str = None):
+  def __init__(self, files, func = None, fun_name: str = None):
     super().__init__()
     self.files = files
     self.func = func

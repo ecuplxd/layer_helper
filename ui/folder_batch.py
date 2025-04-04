@@ -1,33 +1,35 @@
 import os.path
 import time
 
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QTableWidget, \
-  QCheckBox, QFileDialog, QListView, QTreeView, QFileSystemModel, QAbstractItemView, QLabel, QSplitter, QHeaderView
+from PySide6.QtCore import QThread, Qt, Signal
+from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFileDialog, QFileSystemModel, QHBoxLayout,
+                               QHeaderView, QLabel, QListView, QPushButton, QSplitter, QTableWidget, QTreeView,
+                               QVBoxLayout, QWidget,
+                               )
 
-from ui.helper import clear_layout, Status
-from util import file_2_type, find_files, img_2_pdf, word_2_pdf, excel_2_pdf, correct_img_orien, correct_pdf_orien
+from ui.helper import Status, clear_layout
+from util import correct_img_orient, correct_pdf_orient, excel_2_pdf, file_2_type, find_files, img_2_pdf, word_2_pdf
 
 
 class FolderBatchWidget(QWidget):
   ops = ['校正方向', '将以下文件转为 PDF']
   op_file_types = [['图片', 'PDF 扫描件'], ['Word', 'Excel', '图片']]
   file_type_map = {
-    '图片': {
-      'tran_fun': [correct_img_orien, img_2_pdf],
-      'exts': [['.jpg', True], ['.jpeg', True], ['.png', True]]
+    '图片'      : {
+      'tran_fun': [correct_img_orient, img_2_pdf],
+      'exts'    : [['.jpg', True], ['.png', True]]
     },
     'PDF 扫描件': {
-      'tran_fun': [correct_pdf_orien, None],
-      'exts': [['.pdf', True]]
+      'tran_fun': [correct_pdf_orient, None],
+      'exts'    : [['.pdf', True]]
     },
-    'Word': {
+    'Word'      : {
       'tran_fun': [None, word_2_pdf],
-      'exts': [['.doc', True], ['.docx', True]]
+      'exts'    : [['.doc', True], ['.docx', True]]
     },
-    'Excel': {
+    'Excel'     : {
       'tran_fun': [None, excel_2_pdf],
-      'exts': [['.xls', True], ['.xlxs', True]]
+      'exts'    : [['.xls', True], ['.xlxs', True]]
     },
   }
 
@@ -105,7 +107,7 @@ class FolderBatchWidget(QWidget):
         checkbox.setChecked(ext[1])
         h_layout.addWidget(checkbox)
         # 坑
-        checkbox.stateChanged.connect(lambda x, cur=ext: self.update_ext(x, cur))
+        checkbox.stateChanged.connect(lambda x, cur = ext: self.update_ext(x, cur))
 
       h_layout.addStretch()
       self.file_type_layout.addLayout(h_layout)
@@ -138,11 +140,12 @@ class FolderBatchWidget(QWidget):
       filters = [f'**/*{ext[0]}' for ext in exts if ext[1]]
       for file in find_files(self.folders, filters):
         self.matched_files.append({
-          'name': os.path.normpath(file),
+          'name'    : os.path.normpath(file),
           'new_name': file_2_type(file),
-          'status': '待执行',
+          'status'  : '待执行',
           'tran_fun': tran_fun
-        })
+        }
+        )
 
     self.file_table.setRowCount(len(self.matched_files))
 
