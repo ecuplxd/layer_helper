@@ -102,22 +102,24 @@ class PDFWidget(DragDropWidget):
 
     widget = Fields.render(fields.get_item(idx), idx)
     btn = widget.findChild(QPushButton)
-    btn.pressed.connect(lambda: self._test(idx))
+    btn.pressed.connect(lambda: self.field_change(idx))
 
     self.config_layout.addWidget(widget)
     self.update_table()
 
-  def _test(self, i):
+  def field_change(self, i):
     fields = self.cur_config_fields()
     fields.del_item(i)
-    self.update_config_ui()
+    self.update_config_ui(False)
     self.update_table()
 
-  def update_config_ui(self):
+  def update_config_ui(self, clear_table=True):
     idx = self.funcs.currentIndex()
     fields = self.cur_config_fields()
     clear_layout(self.config_layout)
-    self.clear_files()
+
+    if clear_table:
+      self.clear_files()
     self.add_btn.hide()
 
     if idx != 0:
@@ -174,7 +176,6 @@ class PDFWidget(DragDropWidget):
     else:
       self.file_tree.clear()
       vals = self.cur_config_fields().get_vals()
-      val = vals[0]
 
       for file in self.files:
         self.total += len(vals)
@@ -183,6 +184,7 @@ class PDFWidget(DragDropWidget):
         item.setText(0, f'{file} - {page_num} 页')
 
       if fun_name == '合并':
+        val = vals[0]
         if val['新文件名']:
           self.status.setText(f'新文件名：{val['新文件名']}.pdf')
         else:
@@ -199,6 +201,7 @@ class PDFWidget(DragDropWidget):
             child.setText(4, '待执行')
           tree_item.setExpanded(True)
       elif fun_name == '校正方向':
+        val = vals[0]
         page_num = val['基准页'] - 1
         self.last_images = []
         self.angles = []
