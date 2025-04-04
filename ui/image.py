@@ -68,7 +68,7 @@ class ImageWidget(DragDropWidget):
     header.addStretch()
 
     self.table.setColumnCount(4)
-    self.table.setHorizontalHeaderLabels(['文件', '原图', '预览', '状态'])
+    self.table.setHorizontalHeaderLabels(['原文件', '原图', '预览', '状态'])
     self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
     self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
     self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
@@ -79,7 +79,7 @@ class ImageWidget(DragDropWidget):
     reset = QPushButton('重置')
     clear = QPushButton('清空')
     save = QPushButton('保存')
-    save_as_pdf = QPushButton('存为 PDF')
+    save_as_pdf = QPushButton('转为 PDF')
     save_as_merge_pdf = QPushButton('合并为 PDF')
     h2.addStretch()
     h2.addWidget(self.status)

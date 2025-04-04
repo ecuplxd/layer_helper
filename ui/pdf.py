@@ -295,9 +295,10 @@ class PDFWidget(DragDropWidget):
           self.mark_extract_done(i, j)
           time.sleep(0.03)
     elif fun_name == '合并':
+      self.status.setText('合并中，请稍后...')
       val = vals[0]
       merge_pdf(self.files, val['新文件名'])
-      self.status.setText('已合并')
+      self.status.setText('合并完成！')
     elif fun_name == '校正方向':
       for i, file in enumerate(self.files):
         rotate_pdf(file, self.angles[i])
@@ -329,5 +330,5 @@ class Worker2(QThread):
   def run(self):
     for i, image in enumerate(self.images):
       out = get_rotate_angle(image)
-      self.updated.emit(i, out['Rotate'])
+      self.updated.emit(i, out['rotate'])
       time.sleep(0.03)

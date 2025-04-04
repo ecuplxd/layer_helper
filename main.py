@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget, QVBoxLayout
 from ui.folder_batch import FolderBatchWidget
 from ui.image import ImageWidget
 from ui.pdf import PDFWidget
+from ui.word import WordWidget
 
 
 class MainWindow(QMainWindow):
@@ -14,7 +15,8 @@ class MainWindow(QMainWindow):
   tab_widgets = {
     'PDF'   : PDFWidget,
     '批处理': FolderBatchWidget,
-    '图片'  : ImageWidget
+    '图片'  : ImageWidget,
+    'Word'  : WordWidget,
   }
 
   def __init__(self):

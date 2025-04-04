@@ -7,16 +7,17 @@ import shutil
 import time
 from typing import Any, List
 
-import comtypes
 import cv2
 import fitz
 import numpy as np
 import pandas as pd
 from cv2.typing import MatLike
+from docx import Document
+from docxcompose.composer import Composer
 from pymupdf.mupdf import PDF_ENCRYPT_KEEP
 from pytesseract import pytesseract
 from scipy import ndimage
-from win32com.client import DispatchEx
+from win32com.client import Dispatch, DispatchEx
 
 from ui.signal import NOTIFY
 
@@ -241,8 +242,8 @@ def pdf_2_image(pdf_file: str, page = 0, dpi = 350):
 
 def correct_pdf_orient(pdf_file: str, page = 0, new_name: str = None, incremental = False):
   image = pdf_2_image(pdf_file, page)
-  angle = get_rotate_angle(image)['Rotate']
-  rotate_pdf(pdf_file, angle)
+  angle = get_rotate_angle(image)['otate']
+  rotate_pdf(pdf_file, angle, new_name, incremental)
 
 
 def rotate_pdf(pdf_file: str, angle: float = 0.0, new_name: str = None, incremental = False):
@@ -260,18 +261,19 @@ def rotate_pdf(pdf_file: str, angle: float = 0.0, new_name: str = None, incremen
   else:
     name = new_name or doc.name.replace('.pdf', f'-校正方向.pdf')
     doc.save(name)
-    
+
   doc.close()
 
 
 # https://zhuanlan.zhihu.com/p/384500542
 # https://stackoverflow.com/questions/6011115/doc-to-pdf-using-python
 def word_2_pdf(word_file: str, new_name: str = None):
-  wdFormatPDF = 17
-  word = comtypes.client.CreateObject('Word.Application')
+  word_file = os.path.normpath(word_file)
+  word = Dispatch('Word.Application')
+  word.Visible = False
   doc = word.Documents.Open(word_file)
   new_name = new_name or file_2_type(word_file)
-  doc.SaveAs(new_name, FileFormat = wdFormatPDF)
+  doc.SaveAs(new_name, FileFormat = 17)
   doc.Close()
   word.Quit()
 
@@ -309,8 +311,16 @@ def cv_img_2_pdf(img_file: str, image: MatLike):
 
 
 # word 工具类
-def merge_word(word_files: List[str], new_name: str):
-  pass
+def merge_word(word_files: List[str], new_name: str = None):
+  out, new_name = merge_name(word_files[0], new_name)
+  master = Document()
+  composer = Composer(master)
+
+  for file in word_files:
+    doc = Document(file)
+    composer.append(doc)
+
+  composer.save(os.path.join(out, new_name + '.docx'))
 
 
 def split_word(word_file: str, step = 1):
@@ -364,15 +374,14 @@ def resize_im(im, scale, max_scale = None):
 
 def get_rotate_angle(image):
   # resized_img = resize_im(image, scale=600, max_scale=1200)
-  k = pytesseract.image_to_osd(image, config = '--psm 0')
-  out = { i.split(":")[0]: float_convertor(i.split(":")[-1].strip()) for i in k.rstrip().split("\n") }
+  out = pytesseract.image_to_osd(image, config = '--psm 0', output_type = 'dict')
 
   return out
 
 
 def correct_img_orient(image):
   out = get_rotate_angle(image)
-  img_rotated = rotate_img(image, out['Rotate'])
+  img_rotated = rotate_img(image, out['rotate'])
 
   return img_rotated
 
