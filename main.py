@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtCore import QLocale, QTranslator
+from PySide6.QtCore import QLocale, QSettings, QTranslator
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
@@ -26,17 +26,23 @@ class MainWindow(QMainWindow):
   def __init__(self):
     super().__init__()
 
+    self.settings = QSettings('ecuplxd', 'layer_helper')
+
     center_widget = QWidget()
     center_widget.setLayout(QVBoxLayout())
     self.setCentralWidget(center_widget)
     self.init_ui()
+
+    self.restoreGeometry(self.settings.value('geometry'))
+    self.restoreState(self.settings.value('windowState'))
+    self.show()
 
   def init_ui(self) -> None:
     self.init_copyright()
 
     tab_widget = self.init_tab()
     self.centralWidget().layout().addWidget(tab_widget)
-    # tab_widget.setCurrentIndex(3)
+    tab_widget.setCurrentIndex(5)
 
   def init_copyright(self):
     self.setWindowTitle('律师小助手——by 超萌超可爱')
@@ -51,27 +57,37 @@ class MainWindow(QMainWindow):
       tab.setObjectName(name)
       tab_widget.addTab(tab, name)
 
-    tab_widget.setCurrentIndex(5)
-
     return tab_widget
 
+  def closeEvent(self, event):
+    self.settings.setValue('geometry', self.saveGeometry())
+    self.settings.setValue('windowState', self.saveState())
+    super().closeEvent(event)
 
-def main():
-  app = QApplication(sys.argv)
 
+def restore_size(app: QApplication):
+  screen = app.primaryScreen()
+  resolution = screen.size()
+  w = resolution.width()
+  h = resolution.height()
+
+  return w // 2, h // 2
+
+
+def init_tr(app: QApplication):
   QLocale.setDefault(QLocale(QLocale.Chinese, QLocale.China))
   translator = QTranslator(app)
   translator.load('./res/qt_zh_CN.qm')
   translator.load('qtbase_zh_CN')
   app.installTranslator(translator)
 
-  screen = app.primaryScreen()
-  resolution = screen.size()
-  w = resolution.width()
-  h = resolution.height()
+
+def main():
+  app = QApplication(sys.argv)
+  init_tr(app)
   window = MainWindow()
-  window.resize(w // 2, h // 2)
-  window.show()
+  # w, h = restore_size(app)
+  # window.resize(w, h)
 
   app.exec()
 

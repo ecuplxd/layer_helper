@@ -163,7 +163,7 @@ class FileWidget(QWidget):
       self.l_table.setCellWidget(r, 1, QLabel(f'匹配到信息：{matched}'))
     else:
       self.l_table.setCellWidget(r, 1, QLabel('未匹配到相关信息，请手动重命名'))
-    
+
     self.l_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
   def clear(self):
