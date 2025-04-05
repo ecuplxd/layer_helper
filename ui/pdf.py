@@ -284,10 +284,10 @@ class PDFWidget(DragDropWidget):
   def exe_fun(self):
     self.cur = 0
     fields = self.cur_config_fields()
-    vals = fields.get_vals()
     fun_name = self.funcs.currentText()
 
     if fun_name == '规则分割':
+      vals = [Fields.get_val(item) for item in fields.items]
       self.thread = Worker(self.files, vals)
       self.thread.start()
     elif fun_name == '不规则分割':
@@ -299,6 +299,7 @@ class PDFWidget(DragDropWidget):
           time.sleep(0.03)
     elif fun_name == '合并':
       self.status.setText('合并中，请稍后...')
+      vals = fields.get_vals()
       val = vals[0]
       merge_pdf(self.files, val['新文件名'])
       self.status.setText('合并完成！')
