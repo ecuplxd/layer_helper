@@ -174,12 +174,12 @@ def cv_2_qimage(image):
   return pixmap
 
 
-def read_img_as_qt_thumb(image: str|MatLike):
+def read_img_as_qt_thumb(image: str|MatLike, size = (300, 300)):
   if isinstance(image, str):
     image = read_img(image)
 
   pixmap = cv_2_qimage(image)
-  thumbnail = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+  thumbnail = pixmap.scaled(size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation)
   label = QLabel()
   label.setPixmap(thumbnail)
 
