@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
       tab.setObjectName(name)
       tab_widget.addTab(tab, name)
 
-    tab_widget.setCurrentIndex(0)
+    tab_widget.setCurrentIndex(5)
 
     return tab_widget
 

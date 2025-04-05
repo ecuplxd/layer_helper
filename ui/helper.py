@@ -80,7 +80,7 @@ class Field:
 
     if self.type == VarType.NUM:
       control = QSpinBox()
-      control.setValue(val)
+      control.setValue(val or 1)
       control.valueChanged.connect(self.set_val)
     elif val_type == VarType.BOOL:
       control = QCheckBox()
