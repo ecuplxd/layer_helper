@@ -75,6 +75,10 @@ def file_2_type(file, ext = 'pdf'):
   return os.path.normpath(get_file_name(file) + '.' + ext)
 
 
+def normal_join(folder: str, name: str):
+  return os.path.normpath(os.path.join(folder, name))
+
+
 def find_file(folder: str, filter_str: str, rec = True):
   matches = glob.glob(folder + '/' + filter_str, recursive = rec)
 
@@ -138,7 +142,7 @@ def merge_name(file: str, new_name: str = None):
 
 def save_pdf(doc, out, name):
   make_dir(out)
-  doc.save(os.path.join(out, name + '.pdf'), garbage = 4)
+  doc.save(normal_join(out, name + '.pdf'), garbage = 4)
   doc.close()
 
 
@@ -170,7 +174,7 @@ def extract_pdf(pdf_file, s: int = 0, e = -1, out: str = None, new_name: str = N
 def extract_name(pdf_file: str, s: int = 0, e: int = -1, out: str = None, new_name: str = None):
   out = out or get_file_name(pdf_file)
   new_name = new_name or f'part_{s + 1}_{e + 1}'
-  full = os.path.normpath(os.path.join(out, new_name + '.pdf'))
+  full = normal_join(out, new_name + '.pdf')
 
   return out, new_name, full
 
@@ -320,7 +324,7 @@ def merge_word(word_files: List[str], new_name: str = None):
     doc = Document(file)
     composer.append(doc)
 
-  composer.save(os.path.join(out, new_name + '.docx'))
+  composer.save(normal_join(out, new_name + '.docx'))
 
 
 def split_word(word_file: str, step = 1):

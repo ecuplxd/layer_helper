@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QTabl
 from ui.drag import DragDropWidget
 from ui.helper import Field, Fields, clear_layout
 from ui.signal import NOTIFY
-from util import file_2_type, get_file_folder, merge_pdf, merge_word, word_2_pdf
+from util import file_2_type, get_file_folder, merge_pdf, merge_word, normal_join, word_2_pdf
 
 
 class WordWidget(DragDropWidget):
@@ -146,7 +146,7 @@ class Worker(QThread):
 
       if new_name is not None:
         out = get_file_folder(file)
-        new_name = os.path.join(out, f'{new_name}-{r}.pdf')
+        new_name = normal_join(out, f'{new_name}-{r}.pdf')
         outs.append(new_name)
 
       word_2_pdf(file, new_name)

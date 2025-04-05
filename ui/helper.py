@@ -5,7 +5,9 @@ from typing import List, TypeVar
 import cv2
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QWidget
+from PySide6.QtWidgets import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSpinBox,
+                               QVBoxLayout, QWidget,
+                               )
 from cv2.typing import MatLike
 
 from ui.signal import NOTIFY
@@ -47,6 +49,7 @@ class VarType(Enum):
   BOOL = 2
   NUM = 3
   DATE = 4
+  TEXTAREA = 5
 
 
 T = TypeVar('T')
@@ -87,6 +90,11 @@ class Field:
       control.setText(val)
       control.setPlaceholderText(self.hint)
       control.textChanged.connect(self.set_val)
+    elif val_type == VarType.TEXTAREA:
+      control = QPlainTextEdit()
+      control.setPlainText(val)
+      control.setPlaceholderText(self.hint)
+      control.textChanged.connect(self.set_val)
 
     return label, control
 
@@ -107,9 +115,14 @@ class Fields:
     self.items.pop(i)
 
   @staticmethod
-  def render(fields: List[Field], i = None):
+  def render(fields: List[Field], i = None, vertical = False):
     widget = QWidget()
-    h = QHBoxLayout()
+
+    if vertical:
+      h = QVBoxLayout()
+    else:
+      h = QHBoxLayout()
+
     h.setAlignment(Qt.AlignLeft)
 
     for field in fields:
