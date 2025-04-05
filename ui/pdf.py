@@ -113,7 +113,7 @@ class PDFWidget(DragDropWidget):
     self.update_config_ui(False)
     self.update_table()
 
-  def update_config_ui(self, clear_table=True):
+  def update_config_ui(self, clear_table = True):
     idx = self.funcs.currentIndex()
     fields = self.cur_config_fields()
     clear_layout(self.config_layout)

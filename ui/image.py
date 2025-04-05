@@ -1,13 +1,13 @@
 from typing import Any, List
 
 from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QVBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QVBoxLayout, QWidget
 from cv2.typing import MatLike
 
 from ui.drag import DragDropWidget
 from ui.helper import read_img_as_qt_thumb
 from util import (correct_img_orient, cv_img_2_pdf, file_name_and_ext, get_file_folder, img_bleach, make_dir, merge_pdf,
-                  read_img, write_img,
+                  read_img, rotate_img, write_img,
                   )
 
 
@@ -173,7 +173,22 @@ class ImageWidget(DragDropWidget):
       self.last_images = []
 
     for r, file in enumerate(self.files):
-      self.table.setCellWidget(r, 0, QLabel(file))
+      widget = QWidget()
+      layout = QVBoxLayout()
+      widget.setLayout(layout)
+
+      op_layout = QHBoxLayout()
+      layout.addWidget(QLabel(file))
+      layout.addLayout(op_layout)
+      l_btn = QPushButton('顺时针')
+      r_btn = QPushButton('逆时针')
+      op_layout.addWidget(l_btn)
+      op_layout.addWidget(r_btn)
+
+      l_btn.pressed.connect(lambda x = r: self.rotate_img(x, 90))
+      r_btn.pressed.connect(lambda x = r: self.rotate_img(x, -90))
+
+      self.table.setCellWidget(r, 0, widget)
       self.table.setCellWidget(r, 3, QLabel('待执行'))
 
     if not self.rendered:
@@ -183,6 +198,10 @@ class ImageWidget(DragDropWidget):
       self.rendered = True
 
     self.status.setText(f'共 {len(self.files)} 个')
+
+  def rotate_img(self, r: int, angle: float):
+    self.last_images[r] = rotate_img(self.last_images[r], angle)
+    self.table.setCellWidget(r, 2, read_img_as_qt_thumb(self.last_images[r]))
 
   def preview_result(self, r: int, image: MatLike, col: bool):
     self.last_images.append(image)
