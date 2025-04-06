@@ -9,6 +9,7 @@ from ui.file import FileWidget
 from ui.folder_batch import FolderBatchWidget
 from ui.image import ImageWidget
 from ui.pdf import PDFWidget
+from ui.setting import SettingWidget
 from ui.word import WordWidget
 
 
@@ -16,10 +17,11 @@ class MainWindow(QMainWindow):
   tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '文件处理', '新版诉状', '常规文书', '设置', '关于']
   tab_widgets = {
     'PDF'     : PDFWidget,
-    '批处理'  : FolderBatchWidget,
-    '图片'    : ImageWidget,
     'Word'    : WordWidget,
+    '图片'    : ImageWidget,
+    '批处理'  : FolderBatchWidget,
     '文件处理': FileWidget,
+    '设置'    : SettingWidget,
     '关于'    : AboutWidget,
   }
 
@@ -42,7 +44,7 @@ class MainWindow(QMainWindow):
 
     tab_widget = self.init_tab()
     self.centralWidget().layout().addWidget(tab_widget)
-    tab_widget.setCurrentIndex(0)
+    tab_widget.setCurrentIndex(8)
 
   def init_copyright(self):
     self.setWindowTitle('律师小助手——by 超萌超可爱')
