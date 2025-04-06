@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
 
     tab_widget = self.init_tab()
     self.centralWidget().layout().addWidget(tab_widget)
-    tab_widget.setCurrentIndex(5)
+    tab_widget.setCurrentIndex(0)
 
   def init_copyright(self):
     self.setWindowTitle('律师小助手——by 超萌超可爱')

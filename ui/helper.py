@@ -5,7 +5,8 @@ from typing import List, TypeVar
 import cv2
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSpinBox,
+from PySide6.QtWidgets import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
+                               QSpinBox,
                                QVBoxLayout, QWidget,
                                )
 from cv2.typing import MatLike
@@ -74,6 +75,7 @@ class Field:
     val = self.val
     val_type = self.type
     control = QWidget()
+    h = QHBoxLayout()
 
     if val is None:
       val = self.default
@@ -94,9 +96,13 @@ class Field:
       control = QPlainTextEdit()
       control.setPlainText(val)
       control.setPlaceholderText(self.hint)
-      control.textChanged.connect(self.set_val)
+      control.textChanged.connect(lambda: self.set_val(control.toPlainText()))
 
-    return label, control
+    h.addWidget(label)
+    h.addWidget(control)
+    h.setAlignment(Qt.AlignLeft)
+
+    return label, control, h
 
 
 @dataclass
@@ -119,23 +125,25 @@ class Fields:
     widget = QWidget()
 
     if vertical:
-      h = QVBoxLayout()
+      layout = QVBoxLayout()
     else:
-      h = QHBoxLayout()
+      layout = QHBoxLayout()
 
-    h.setAlignment(Qt.AlignLeft)
+    layout.setAlignment(Qt.AlignLeft)
 
     for field in fields:
-      label, control = field.render()
-      h.addWidget(label)
-      h.addWidget(control)
+      label, control, h = field.render()
+      layout.addLayout(h)
 
     if i is not None:
       btn = QPushButton('删除')
-      h.addWidget(btn)
+      layout.addWidget(btn)
       btn.pressed.connect(widget.deleteLater)
 
-    widget.setLayout(h)
+    if not vertical:
+      layout.addStretch()
+
+    widget.setLayout(layout)
 
     return widget
 
