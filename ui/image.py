@@ -1,8 +1,8 @@
 from typing import Any, List
 
+from cv2.typing import MatLike
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QVBoxLayout, QWidget
-from cv2.typing import MatLike
 
 from ui.drag import DragDropWidget
 from ui.helper import read_img_as_qt_thumb

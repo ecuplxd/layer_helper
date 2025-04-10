@@ -3,13 +3,13 @@ from enum import Enum
 from typing import List, TypeVar
 
 import cv2
+from cv2.typing import MatLike
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
                                QSpinBox,
                                QVBoxLayout, QWidget,
                                )
-from cv2.typing import MatLike
 
 from ui.signal import NOTIFY
 from util import read_img
@@ -108,7 +108,7 @@ class Field:
 @dataclass
 class Fields:
   name: str
-  items: List[Field|List[Field]]
+  items: List[Field | List[Field]]
   is_arr: bool = False
 
   def size(self):
@@ -182,7 +182,7 @@ def cv_2_qimage(image):
   return pixmap
 
 
-def read_img_as_qt_thumb(image: str|MatLike, size = (300, 300)):
+def read_img_as_qt_thumb(image: str | MatLike, size = (300, 300)):
   if isinstance(image, str):
     image = read_img(image)
 

@@ -1,8 +1,8 @@
 from typing import List
 
+from natsort import natsorted
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget
-from natsort import natsorted
 
 
 class DragDropWidget(QWidget):
