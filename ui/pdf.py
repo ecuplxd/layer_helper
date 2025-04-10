@@ -1,14 +1,14 @@
 import time
 from typing import Any, List
 
+from cv2.typing import MatLike
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTreeWidget, QTreeWidgetItem,
                                QVBoxLayout,
                                )
-from cv2.typing import MatLike
 
 from ui.drag import DragDropWidget
-from ui.helper import (Field, Fields, VarType, clear_all_children, clear_layout, read_img_as_qt_thumb)
+from ui.helper import (clear_all_children, clear_layout, Field, Fields, read_img_as_qt_thumb, VarType)
 from ui.signal import NOTIFY
 from util import (extract_name, extract_pdf, get_pdf_page, get_rotate_angle, list_at, merge_pdf, pdf_2_image,
                   rotate_img, rotate_pdf, split_name, split_pdf,

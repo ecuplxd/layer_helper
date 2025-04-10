@@ -5,7 +5,7 @@ from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QTableWidget, QVBoxLayout
 
 from ui.drag import DragDropWidget
-from ui.helper import Field, Fields, clear_layout
+from ui.helper import clear_layout, Field, Fields
 from ui.signal import NOTIFY
 from util import file_2_type, get_file_folder, merge_pdf, merge_word, normal_join, word_2_pdf
 

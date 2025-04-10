@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QHeaderView, QLabel, QPus
                                )
 
 from ui.drag import DragDropWidget
-from ui.helper import Field, Fields, VarType, clear_layout
+from ui.helper import clear_layout, Field, Fields, VarType
 from util import file_name_and_ext, normal_join, ocr_pdf
 
 

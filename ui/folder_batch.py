@@ -1,13 +1,13 @@
 import os.path
 import time
 
-from PySide6.QtCore import QThread, Qt, Signal
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFileDialog, QFileSystemModel, QHBoxLayout,
                                QHeaderView, QLabel, QListView, QPushButton, QSplitter, QTableWidget, QTreeView,
                                QVBoxLayout, QWidget,
                                )
 
-from ui.helper import Status, clear_layout
+from ui.helper import clear_layout, Status
 from util import correct_img_orient, correct_pdf_orient, excel_2_pdf, file_2_type, find_files, img_2_pdf, word_2_pdf
 
 

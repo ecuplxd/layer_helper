@@ -234,7 +234,7 @@ def ocr_pdf(pdf_file: str, page = 0, dpi = 350):
   return result
 
 
-def pdf_2_image(pdf_file: str, page = 0, dpi = 350, reset_angle=False):
+def pdf_2_image(pdf_file: str, page = 0, dpi = 350, reset_angle = False):
   doc = fitz.open(pdf_file)
 
   if reset_angle:
@@ -406,6 +406,34 @@ def write_img(image, name):
       return True
     else:
       return False
+
+
+def cal_fees(num: float, cal_half = True):
+  if num <= 10000:
+    result = 50
+  elif num < 100000:
+    result = num * 0.025 - 200
+  elif num < 200000:
+    result = num * 0.02 + 300
+  elif num < 500000:
+    result = num * 0.015 + 1300
+  elif num < 1000000:
+    result = num * 0.01 + 3800
+  elif num < 2000000:
+    result = num * 0.009 + 4800
+  elif num < 5000000:
+    result = num * 0.008 + 6800
+  elif num < 10000000:
+    result = num * 0.007 + 11800
+  elif num < 20000000:
+    result = num * 0.006 + 21800
+  else:
+    result = num * 0.005 + 41800
+
+  if cal_half:
+    return f'{result:,.2f}\t{result / 2:,.2f}'
+  else:
+    return f'{result:,.2f}'
 
 
 def main():

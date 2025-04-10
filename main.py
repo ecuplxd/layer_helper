@@ -5,6 +5,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
 from ui.about import AboutWidget
+from ui.cal import CalWidget
 from ui.file import FileWidget
 from ui.folder_batch import FolderBatchWidget
 from ui.image import ImageWidget
@@ -13,13 +14,14 @@ from ui.word import WordWidget
 
 
 class MainWindow(QMainWindow):
-  tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '文件处理', '新版诉状', '常规文书', '设置', '关于']
+  tabs = ['PDF', 'Word', 'Excel', '图片', '批处理', '文件处理', '新版诉状', '常规文书', '计算器', '设置', '关于']
   tab_widgets = {
     'PDF'     : PDFWidget,
     '批处理'  : FolderBatchWidget,
     '图片'    : ImageWidget,
     'Word'    : WordWidget,
     '文件处理': FileWidget,
+    '计算器'  : CalWidget,
     '关于'    : AboutWidget,
   }
 
