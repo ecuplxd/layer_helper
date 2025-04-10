@@ -209,7 +209,7 @@ class PDFWidget(DragDropWidget):
         for i, file in enumerate(self.files):
           tree_item = self.file_tree.topLevelItem(i)
           pdf_img = pdf_2_image(file, page_num)
-          self.last_images.append(pdf_img)
+          self.last_images.append(pdf_2_image(file, page_num, reset_angle = True))
           self.angles.append(0.0)
           self.file_tree.setItemWidget(tree_item, 2, read_img_as_qt_thumb(pdf_img))
           tree_item.setText(3, '校正中...')

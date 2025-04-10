@@ -234,8 +234,12 @@ def ocr_pdf(pdf_file: str, page = 0, dpi = 350):
   return result
 
 
-def pdf_2_image(pdf_file: str, page = 0, dpi = 350):
+def pdf_2_image(pdf_file: str, page = 0, dpi = 350, reset_angle=False):
   doc = fitz.open(pdf_file)
+
+  if reset_angle:
+    doc[page].set_rotation(0)
+
   page = doc.load_page(page)
   pix = page.get_pixmap(dpi = dpi)
   img = np.frombuffer(pix.samples_mv, dtype = np.uint8).reshape((pix.height, pix.width, 3)).copy()
@@ -251,9 +255,6 @@ def correct_pdf_orient(pdf_file: str, page = 0, new_name: str = None, incrementa
 
 
 def rotate_pdf(pdf_file: str, angle: float = 0.0, new_name: str = None, incremental = False):
-  if angle == 0:
-    return
-
   angle = int(((360 - angle) / 90) * 90)
   doc = fitz.open(pdf_file)
 
