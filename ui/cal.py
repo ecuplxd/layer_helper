@@ -38,6 +38,7 @@ class CalWidget(QWidget):
     footer.addWidget(clear)
     footer.addWidget(ok)
 
+    half.stateChanged.connect(self.update_val)
     clear.pressed.connect(self.clear_input)
     ok.pressed.connect(self.cal)
 
@@ -46,6 +47,12 @@ class CalWidget(QWidget):
     layout.addLayout(footer)
 
     self.setLayout(layout)
+
+  def update_val(self, checked: int):
+    if checked == 0:
+      self.cal_half = False
+    else:
+      self.cal_half = True
 
   def clear_input(self):
     self.l_input.setPlainText('')
@@ -56,5 +63,5 @@ class CalWidget(QWidget):
 
     if idx == 0:
       nums = [float(line.strip()) for line in self.l_input.toPlainText().strip().split('\n')]
-      results = [cal_fees(num) for num in nums]
+      results = [cal_fees(num, self.cal_half) for num in nums]
       self.r_input.setPlainText('\n'.join(results))
