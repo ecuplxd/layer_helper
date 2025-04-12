@@ -1,3 +1,4 @@
+import os.path
 from typing import Any, List
 
 from cv2.typing import MatLike
@@ -6,7 +7,7 @@ from PySide6.QtWidgets import QHBoxLayout, QHeaderView, QLabel, QPushButton, QTa
 
 from ui.drag import DragDropWidget
 from ui.helper import read_img_as_qt_thumb
-from util import (correct_img_orient, cv_img_2_pdf, file_name_and_ext, get_file_folder, img_bleach, make_dir, merge_pdf,
+from util import (correct_img_orient, cv_img_2_pdf, file_name_and_ext, get_file_folder, img_bleach, merge_pdf,
                   read_img, rotate_img, write_img,
                   )
 
@@ -145,13 +146,13 @@ class ImageWidget(DragDropWidget):
     self.thread.start()
 
   def save_result(self):
-    out = get_file_folder(self.files[0]) + '/out'
-    make_dir(out)
     total = len(self.files)
 
     for r, image in enumerate(self.last_images):
+      out = get_file_folder(self.files[r])
       name, ext = file_name_and_ext(self.files[r])
-      write_img(image, f'{out}/{name}.{ext}')
+      new_name = f'{out}/{name}-new{ext}'
+      write_img(image, os.path.normpath(new_name))
 
       self.table.selectRow(r)
       self.table.setCellWidget(r, 3, QLabel('√'))

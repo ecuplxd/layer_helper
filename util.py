@@ -15,7 +15,7 @@ from cv2.typing import MatLike
 from docx import Document
 from docxcompose.composer import Composer
 from pymupdf.mupdf import PDF_ENCRYPT_KEEP
-from pytesseract import pytesseract
+from pytesseract import pytesseract, TesseractError
 from scipy import ndimage
 from win32com.client import Dispatch, DispatchEx
 
@@ -379,7 +379,12 @@ def resize_im(im, scale, max_scale = None):
 
 def get_rotate_angle(image):
   # resized_img = resize_im(image, scale=600, max_scale=1200)
-  out = pytesseract.image_to_osd(image, config = '--psm 0', output_type = 'dict')
+  try:
+    out = pytesseract.image_to_osd(image, config = '--psm 0', output_type = 'dict')
+  except TesseractError:
+    out = {
+      'rotate': 0
+    }
 
   return out
 

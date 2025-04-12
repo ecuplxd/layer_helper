@@ -1,17 +1,17 @@
 import os.path
 import time
+from typing import List
 
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFileDialog, QFileSystemModel, QHBoxLayout,
-                               QHeaderView, QLabel, QListView, QPushButton, QSplitter, QTableWidget, QTreeView,
-                               QVBoxLayout, QWidget,
-                               )
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QHBoxLayout,
+                               QHeaderView, QLabel, QPushButton, QSplitter, QTableWidget, QVBoxLayout, )
 
+from ui.drag import DragDropWidget
 from ui.helper import clear_layout, Status
 from util import correct_img_orient, correct_pdf_orient, excel_2_pdf, file_2_type, find_files, img_2_pdf, word_2_pdf
 
 
-class FolderBatchWidget(QWidget):
+class FolderBatchWidget(DragDropWidget):
   ops = ['校正方向', '将以下文件转为 PDF']
   op_file_types = [['图片', 'PDF 扫描件'], ['Word', 'Excel', '图片']]
   file_type_map = {
@@ -53,10 +53,8 @@ class FolderBatchWidget(QWidget):
     header = QHBoxLayout()
 
     self.funcs_select.addItems(self.ops)
-    view_btn = QPushButton('选择目录')
     header.addWidget(self.funcs_select)
     header.addStretch()
-    header.addWidget(view_btn)
 
     self.folder_table.setColumnCount(1)
     self.folder_table.setHorizontalHeaderLabels(['目录'])
@@ -89,8 +87,8 @@ class FolderBatchWidget(QWidget):
     self.setLayout(layout)
 
     self.funcs_select.currentIndexChanged.connect(self.show_file_type)
-    view_btn.pressed.connect(self.choose_folders)
     ok_btn.pressed.connect(self.exec_fun)
+    self.dropped.connect(self.update_table)
     self.funcs_select.setCurrentIndex(1)
 
   def show_file_type(self, i: int = 0):
@@ -163,22 +161,10 @@ class FolderBatchWidget(QWidget):
     self.file_table.setCellWidget(r, 2, Status(True))
     self.file_table.selectRow(r)
 
-  # https://gist.github.com/sneakers-the-rat/22c3449e2c7043c594712bce89c27e8e
-  def choose_folders(self):
-    file_dialog = QFileDialog()
-    file_dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
-    file_dialog.setFileMode(QFileDialog.Directory)
-    file_dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
-
-    for widget_type in (QListView, QTreeView):
-      for view in file_dialog.findChildren(widget_type):
-        if isinstance(view.model(), QFileSystemModel):
-          view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-
-    if file_dialog.exec():
-      self.folders = file_dialog.selectedFiles()
-      self.update_folder_table(self.folders)
-      self.update_file_table()
+  def update_table(self, folders: List[str]):
+    self.folders = folders
+    self.update_folder_table(self.folders)
+    self.update_file_table()
 
 
 class Worker(QThread):
