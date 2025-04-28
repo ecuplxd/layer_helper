@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import time
+from datetime import datetime, timedelta
 from typing import Any, List
 
 import cv2
@@ -12,6 +13,7 @@ import fitz
 import numpy as np
 import pandas as pd
 from cv2.typing import MatLike
+from dateutil.relativedelta import relativedelta
 from docx import Document
 from docxcompose.composer import Composer
 from pymupdf.mupdf import PDF_ENCRYPT_KEEP
@@ -36,6 +38,36 @@ def list_at(l: List[Any], idx: int, default = None):
     return l[idx]
   except IndexError:
     return default
+
+
+def parse_date(val):
+  if isinstance(val, str):
+    if val.isdigit():
+      val = int(val)
+    else:
+      return pd.to_datetime(val)
+
+  dt = None
+  val /= 1000
+
+  if val < 0:
+    dt = datetime(1970, 1, 1) + timedelta(seconds = val)
+  else:
+    dt = datetime.fromtimestamp(val)
+
+  return dt
+
+
+def format_date(val = None, remove_zero = False):
+  if val is None:
+    val = datetime.now().timestamp() * 1000
+
+  dt = parse_date(val)
+
+  if remove_zero:
+    return f'{dt.year}年{dt.month}月{dt.day}日'
+  else:
+    return dt.strftime('%Y年%m月%d日')
 
 
 # 路径相关
@@ -102,7 +134,7 @@ def del_files(files: List[str]):
 
 # json 相关
 def excel_2_json(excel_file: str):
-  excel_data = pd.read_excel(excel_file)
+  excel_data = pd.read_excel(excel_file, dtype = 'str')
   json_str = excel_data.to_json(orient = 'records', force_ascii = False)
   rows = json.loads(json_str)
 
@@ -318,10 +350,11 @@ def cv_img_2_pdf(img_file: str, image: MatLike):
 # word 工具类
 def merge_word(word_files: List[str], new_name: str = None):
   out, new_name = merge_name(word_files[0], new_name)
-  master = Document()
+  master = Document(word_files[0])
   composer = Composer(master)
 
-  for file in word_files:
+  for file in word_files[1:]:
+    master.add_page_break()
     doc = Document(file)
     composer.append(doc)
 
@@ -441,11 +474,33 @@ def cal_fees(num: float, cal_half = True):
     return f'{result:,.2f}'
 
 
+def cal_fenqi(start, total):
+  dt = parse_date(start)
+  dates = [dt] + [dt + relativedelta(months = i + 1) for i in range(0, total - 1)]
+  results = []
+  cur_year = None
+
+  for date in dates:
+    y = date.year
+    m = date.month
+    d = date.day
+    date_str = f'{m}月{d}日'
+
+    if date.year != cur_year:
+      date_str = f'{y}年' + date_str
+
+    results.append(date_str)
+    cur_year = date.year
+
+  return '、'.join(results)
+
+
 def main():
   # img = read_img('./_test/imgs/微信图片_20250328111930.jpg')
   # new_image = img_bleach(img)
   # cv2.imwrite('./test.jpg', new_image)
-  correct_pdf_orient('./S30C-0i25031710240.pdf')
+  # correct_pdf_orient('./S30C-0i25031710240.pdf')
+  print(cal_fenqi('2025/1/1', 10))
 
 
 if __name__ == '__main__':

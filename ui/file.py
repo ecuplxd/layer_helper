@@ -15,7 +15,7 @@ from util import file_name_and_ext, normal_join, ocr_pdf
 
 class FileWidget(QWidget):
   configs = [
-    Fields('快速一对一移入', [Field(label = '重命名为（同名文件将添加 .bak 后缀）', hint = '选填')]),
+    Fields('快速一对一移入', [Field(label = '重命名为', hint = '选填（同名文件将添加 .bak 后缀）')]),
     Fields('识别要素并重命名', [Field(label = '需要识别的内容', hint = '使用正则表达式', val = ''),
                                 Field(label = '使用第几列数据进行匹配', type = VarType.NUM),
                                 Field(label = '粘贴 Excel 数据', type = VarType.TEXTAREA),

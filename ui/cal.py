@@ -1,29 +1,39 @@
-from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QPlainTextEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QPlainTextEdit,
+                               QPushButton, QVBoxLayout,
+                               QWidget)
 
-from util import cal_fees
+from ui.helper import clear_layout, Field, Fields, VarType
+from ui.signal import NOTIFY
+from util import cal_fees, cal_fenqi
 
 
 class CalWidget(QWidget):
-  cal_half = True
+  form = [
+    Fields('诉讼费', [Field(label = '计算减半', type = VarType.BOOL, val = True)]),
+    Fields('分期', [
+      Field(label = '开始日期', hint = 'yyyy/mm/dd'),
+      Field(label = '期数', type = VarType.NUM, val = 24)
+    ]
+           ),
+  ]
 
   def __init__(self):
     super().__init__()
 
     self.funcs = QComboBox()
+    self.form_container = QHBoxLayout()
     self.l_input = QPlainTextEdit(placeholderText = '粘贴标的额，一行一个')
-    self.r_input = QPlainTextEdit()
+    self.r_input = QPlainTextEdit(placeholderText = '结果显示在这里')
     self.init_ui()
 
   def init_ui(self):
     layout = QVBoxLayout()
-
     header = QHBoxLayout()
-    half = QCheckBox('同时计算减半')
-    half.setChecked(self.cal_half)
-    self.funcs.addItems(['诉讼费'])
+
+    self.funcs.addItems(['诉讼费', '分期'])
 
     header.addWidget(self.funcs)
-    header.addWidget(half)
+    header.addLayout(self.form_container)
     header.addStretch()
 
     center = QHBoxLayout()
@@ -38,30 +48,54 @@ class CalWidget(QWidget):
     footer.addWidget(clear)
     footer.addWidget(ok)
 
-    half.stateChanged.connect(self.update_val)
+    self.funcs.currentIndexChanged.connect(self.update_config)
     clear.pressed.connect(self.clear_input)
     ok.pressed.connect(self.cal)
+    NOTIFY.field_updated.connect(self.cal)
 
     layout.addLayout(header)
     layout.addLayout(center)
     layout.addLayout(footer)
 
+    self.r_input.setReadOnly(True)
     self.setLayout(layout)
+    self.update_config()
 
-  def update_val(self, checked: int):
-    if checked == 0:
-      self.cal_half = False
+  def update_fenqi(self):
+    idx, val = self.get_form_val()
+    start_date = val['开始日期']
+    total = val['期数']
+
+    if start_date and total:
+      self.r_input.setPlainText(cal_fenqi(start_date, total))
+
+  def update_config(self, i = 0):
+    clear_layout(self.form_container)
+    fields = self.form[i]
+    self.form_container.addWidget(Fields.render(fields.items))
+
+    if i == 0:
+      self.l_input.show()
     else:
-      self.cal_half = True
+      self.l_input.hide()
 
   def clear_input(self):
     self.l_input.setPlainText('')
     self.r_input.setPlainText('')
 
-  def cal(self):
+  def get_form_val(self):
     idx = self.funcs.currentIndex()
+    fields = self.form[self.funcs.currentIndex()]
+    val = Fields.get_val(fields.items)
+
+    return idx, val
+
+  def cal(self):
+    idx, val = self.get_form_val()
 
     if idx == 0:
       nums = [float(line.strip()) for line in self.l_input.toPlainText().strip().split('\n')]
-      results = [cal_fees(num, self.cal_half) for num in nums]
+      results = [cal_fees(num, val['计算减半']) for num in nums]
       self.r_input.setPlainText('\n'.join(results))
+    elif idx == 1:
+      self.update_fenqi()
