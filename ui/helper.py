@@ -67,7 +67,11 @@ class Field:
   changed = Signal(T)
 
   def set_val(self, val: T):
-    self.val = val
+    if self.type == VarType.BOOL:
+      self.val = val == 2
+    else:
+      self.val = val
+      
     NOTIFY.field_updated.emit()
 
   def render(self):
@@ -87,6 +91,7 @@ class Field:
     elif val_type == VarType.BOOL:
       control = QCheckBox()
       control.setChecked(val)
+      control.stateChanged.connect(self.set_val)
     elif val_type == VarType.TEXT:
       control = QLineEdit()
       control.setText(val)
