@@ -132,6 +132,31 @@ def del_files(files: List[str]):
     os.remove(file)
 
 
+def normal_path(file: str):
+  file = os.path.normpath(file)
+
+  return file.replace('\\', '/')
+
+
+def filename_with_parent_dir(file):
+  full = normal_path(file)
+  parent = os.path.basename(os.path.dirname(full))
+  file_name = f'{parent}-{os.path.basename(file)}'
+
+  return {
+    'src' : full,
+    'name': file_name
+  }
+
+
+def filter_file_by_glob(home, reg):
+  files = glob.glob(normal_path(f'{home}/**/{reg}'), recursive = True)
+  files = list(set(files))
+  files = [file for file in files if os.path.isfile(file)]
+
+  return files
+
+
 # json 相关
 def excel_2_json(excel_file: str):
   excel_data = pd.read_excel(excel_file, dtype = 'str')

@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QPlainTextEdit,
                                QWidget)
 
 from ui.helper import clear_layout, Field, Fields, VarType
-from ui.signal import NOTIFY
+from ui.signal import get_tab_idx, NOTIFY
 from util import cal_fees, cal_fenqi
 
 
@@ -91,10 +91,13 @@ class CalWidget(QWidget):
     return idx, val
 
   def cal(self):
+    if get_tab_idx() != 8:
+      return
+
     idx, val = self.get_form_val()
 
     if idx == 0:
-      nums = [float(line.strip()) for line in self.l_input.toPlainText().strip().split('\n')]
+      nums = [float(line.strip()) for line in self.l_input.toPlainText().strip().split('\n') if line]
       results = [cal_fees(num, val['计算减半']) for num in nums]
       self.r_input.setPlainText('\n'.join(results))
     elif idx == 1:

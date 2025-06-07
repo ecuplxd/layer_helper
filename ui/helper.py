@@ -51,6 +51,7 @@ class VarType(Enum):
   NUM = 3
   DATE = 4
   TEXTAREA = 5
+  FILE = 6
 
 
 T = TypeVar('T')
@@ -71,7 +72,7 @@ class Field:
       self.val = val == 2
     else:
       self.val = val
-      
+
     NOTIFY.field_updated.emit()
 
   def render(self):

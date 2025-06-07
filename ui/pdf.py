@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QHeaderView, QLabel, QPus
 
 from ui.drag import DragDropWidget
 from ui.helper import (clear_all_children, clear_layout, Field, Fields, read_img_as_qt_thumb, VarType)
-from ui.signal import NOTIFY
+from ui.signal import get_tab_idx, NOTIFY
 from util import (extract_name, extract_pdf, get_pdf_page, get_rotate_angle, list_at, merge_pdf, pdf_2_image,
                   rotate_img, rotate_pdf, split_name, split_pdf,
                   )
@@ -132,6 +132,9 @@ class PDFWidget(DragDropWidget):
         self.config_layout.addWidget(Fields.render(fields.items))
 
   def update_table(self, files: List[str] = None):
+    if get_tab_idx() != 0:
+      return
+
     if files:
       self.file_tree.clear()
 
