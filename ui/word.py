@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QTabl
 
 from ui.drag import DragDropWidget
 from ui.helper import clear_layout, Field, Fields
-from ui.signal import NOTIFY
+from ui.signal import get_tab_idx, NOTIFY
 from util import file_2_type, get_file_folder, merge_pdf, merge_word, normal_join, word_2_pdf
 
 
@@ -69,6 +69,9 @@ class WordWidget(DragDropWidget):
     self.update_table()
 
   def update_table(self):
+    if get_tab_idx() != 1:
+      return
+
     self.table.setRowCount(0)
     self.table.setRowCount(len(self.files))
 

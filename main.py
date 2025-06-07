@@ -10,6 +10,7 @@ from ui.file import FileWidget
 from ui.folder_batch import FolderBatchWidget
 from ui.image import ImageWidget
 from ui.pdf import PDFWidget
+from ui.signal import TAB_IDX, update_tab_idx
 from ui.word import WordWidget
 
 
@@ -44,7 +45,8 @@ class MainWindow(QMainWindow):
 
     tab_widget = self.init_tab()
     self.centralWidget().layout().addWidget(tab_widget)
-    tab_widget.setCurrentIndex(0)
+    tab_widget.setCurrentIndex(TAB_IDX)
+    tab_widget.currentChanged.connect(update_tab_idx)
 
   def init_copyright(self):
     self.setWindowTitle('律师小助手——by 超萌超可爱')
